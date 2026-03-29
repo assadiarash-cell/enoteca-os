@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ── Cantina Oscura Design System ── */
+
+  /* Background */
+  --bg-primary: #07070D;
+  --bg-secondary: #0D0D15;
+  --bg-tertiary: #14141F;
+  --bg-quaternary: #1C1C2A;
+
+  /* Accent */
+  --accent-primary: #C9843A;
+  --accent-secondary: #D4A05A;
+  --accent-wine: #8B1A32;
+  --accent-wine-light: #B83250;
+
+  /* Semantic */
+  --success: #22C68A;
+  --warning: #E5A832;
+  --danger: #DC4545;
+  --info: #3B7FD9;
+
+  /* Text */
+  --text-primary: #EEECE7;
+  --text-secondary: #A09E96;
+  --text-tertiary: #6B6963;
+  --text-disabled: #3D3B37;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.20);
+
+  /* Glass */
+  --bg-glass: rgba(13, 13, 21, 0.72);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-strong);
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: rgba(201, 132, 58, 0.3);
+    color: var(--text-primary);
+  }
+}
+
+@layer components {
+  /* Glass surface */
+  .glass-surface {
+    background: var(--bg-glass);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-subtle);
+  }
+
+  /* Copper gradient text */
+  .text-copper-gradient {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Copper gradient background */
+  .bg-copper-gradient {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  }
+
+  /* Wine gradient background */
+  .bg-wine-gradient {
+    background: linear-gradient(135deg, var(--accent-wine), var(--accent-wine-light));
+  }
+
+  /* Hover card effect */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Priority borders for alert cards */
+  .priority-critical {
+    border-left: 3px solid var(--danger);
+  }
+
+  .priority-high {
+    border-left: 3px solid var(--warning);
+  }
+
+  .priority-medium {
+    border-left: 3px solid var(--info);
+  }
+
+  .priority-low {
+    border-left: 3px solid var(--text-tertiary);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

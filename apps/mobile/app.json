@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "ENOTECA OS",
+    "slug": "enoteca-os",
+    "scheme": "enoteca-os",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0C"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.enoteca.os",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ENOTECA OS uses the camera to scan and identify wine bottles.",
+        "NSPhotoLibraryUsageDescription": "ENOTECA OS accesses your photos to upload bottle images."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0C"
+      },
+      "package": "com.enoteca.os",
+      "permissions": ["CAMERA"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-camera",
+      "expo-image-picker",
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-font",
+        {
+          "fonts": []
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
