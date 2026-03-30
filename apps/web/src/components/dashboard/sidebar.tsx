@@ -33,7 +33,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[240px] flex-col bg-bg-primary border-r border-border-subtle">
+    <aside className="flex h-screen w-[240px] flex-col bg-bg-primary border-r border-border-subtle">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 px-5 border-b border-border-subtle">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-copper-gradient">

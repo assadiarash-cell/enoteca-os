@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Sidebar } from '@/components/dashboard/sidebar';
-import { Menu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -16,24 +16,24 @@ export default function DashboardLayout({
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar - hidden on mobile by default, always visible on desktop */}
-      <div
-        className={`
-          fixed inset-y-0 left-0 z-40
-          transition-transform duration-300 ease-in-out
-          lg:translate-x-0
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}
+      {/* Sidebar wrapper — always fixed, slides on mobile */}
+      <aside
+        className={[
+          'fixed inset-y-0 left-0 z-50 w-[240px]',
+          'transition-transform duration-300 ease-in-out',
+          'lg:translate-x-0',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        ].join(' ')}
       >
         <Sidebar onNavigate={() => setMobileOpen(false)} />
-      </div>
+      </aside>
 
-      {/* Main content - no left margin on mobile, 240px on desktop */}
+      {/* Main content */}
       <main className="flex-1 lg:ml-[240px] min-h-screen">
         {/* Mobile top bar with hamburger */}
         <div className="sticky top-0 z-20 flex items-center h-14 px-4 bg-[#07070D]/80 backdrop-blur-xl border-b border-[rgba(255,255,255,0.06)] lg:hidden">
