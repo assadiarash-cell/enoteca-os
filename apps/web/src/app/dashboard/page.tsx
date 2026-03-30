@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Wine,
   DollarSign,
   Clock,
   Package,
   Bell,
-  TrendingUp,
-  TrendingDown,
   Trophy,
   AlertCircle,
+  AlertTriangle,
+  TrendingDown,
   Bot,
   CheckCircle,
   Plus,
@@ -18,69 +18,64 @@ import {
   Send,
   BarChart3,
   ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { KpiCard } from '@/components/dashboard/kpi-card';
-import { AlertCard } from '@/components/dashboard/alert-card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { DEMO_ORG_ID } from '@/lib/hooks/use-org';
 
-/* ── KPI data with icons & trends (Figma-style) ── */
-const kpis = [
-  { label: 'Bottiglie oggi', value: '23', delta: 12.5, icon: Wine },
-  { label: 'Revenue MTD', value: '€148.200', delta: 8.3, icon: DollarSign },
-  { label: 'Deal in attesa', value: '14', delta: -2.1, icon: Clock },
-  { label: 'Valore inventario', value: '€2.4M', delta: 5.7, icon: Package },
-];
+/* ── Types ── */
+interface Bottle {
+  id: string;
+  status: string;
+  purchase_price: number | null;
+  target_sell_price: number | null;
+  market_price_high: number | null;
+}
 
-/* ── Alerts with Figma-style accent colors & icons ── */
-const alerts = [
-  {
-    icon: Trophy,
-    title: 'Romanée-Conti 1998 — Offerta ricevuta',
-    message: 'Buyer premium ha inviato offerta di €12.500. Scadenza risposta: 2 ore.',
-    priority: 'critical' as const,
-    accent: '#C9843A',
-    timestamp: '10 min fa',
-    actions: [{ label: 'Vedi offerta' }, { label: 'Rispondi' }],
-  },
-  {
-    icon: AlertCircle,
-    title: 'Nuove 8 bottiglie da valutare',
-    message: 'Richiesta valutazione da cantina privata a Verona. Foto caricate.',
-    priority: 'high' as const,
-    accent: '#E5A832',
-    timestamp: '32 min fa',
-    actions: [{ label: 'Valuta ora' }],
-  },
-  {
-    icon: Bot,
-    title: 'Margine basso su Macallan 25',
-    message: 'Il prezzo di mercato è sceso del 4%. Margine attuale: 8%. Considerare aggiornamento listino.',
-    priority: 'medium' as const,
-    accent: '#3B7FD9',
-    timestamp: '1 ora fa',
-    actions: [{ label: 'Aggiorna prezzo' }],
-  },
-  {
-    icon: CheckCircle,
-    title: 'Backup inventario completato',
-    message: 'Export CSV e foto completato con successo. 1.847 bottiglie esportate.',
-    priority: 'low' as const,
-    accent: '#22C68A',
-    timestamp: '3 ore fa',
-  },
-];
+interface Alert {
+  id: string;
+  alert_type: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
+  message: string;
+  action_url: string | null;
+  is_read: boolean;
+  created_at: string;
+}
 
-/* ── Activity feed with agent color dots (Figma-style) ── */
-const activities = [
-  { time: '14:32', agent: 'Pricing', color: '#C9843A', action: 'Aggiornato prezzo Château Margaux 2015' },
-  { time: '13:18', agent: 'Scout', color: '#3B7FD9', action: 'Trovato Macallan 18yr sottovalutato' },
-  { time: '12:45', agent: 'Valuation', color: '#22C68A', action: 'Completata analisi Barolo Riserva 1967' },
-  { time: '11:30', agent: 'Outreach', color: '#E5A832', action: 'Contattati 3 nuovi venditori via WhatsApp' },
-  { time: '10:15', agent: 'Inventory', color: '#8B1A32', action: 'Aggiunto Hennessy Paradis al magazzino 2' },
-  { time: '09:40', agent: 'Pricing', color: '#C9843A', action: 'Report margini settimanale generato' },
-];
+interface Acquisition {
+  id: string;
+  status: string;
+  total_bottles: number | null;
+  total_offer: number | null;
+  total_final: number | null;
+}
+
+interface Sale {
+  id: string;
+  status: string;
+  total_amount: number | null;
+  margin_amount: number | null;
+  margin_percent: number | null;
+}
+
+/* ── Alert type → icon & accent color mapping ── */
+const alertTypeConfig: Record<string, { icon: typeof Trophy; accent: string }> = {
+  trophy_bottle:      { icon: Trophy,        accent: '#C9843A' },
+  stagnant_inventory: { icon: AlertTriangle, accent: '#E5A832' },
+  price_change:       { icon: TrendingDown,  accent: '#3B7FD9' },
+  new_lead:           { icon: Bot,           accent: '#22C68A' },
+  deal_pending:       { icon: Clock,         accent: '#E5A832' },
+  authenticity_flag:  { icon: AlertCircle,   accent: '#DC2626' },
+};
+
+const priorityAccent: Record<string, string> = {
+  critical: '#C9843A',
+  high:     '#E5A832',
+  medium:   '#3B7FD9',
+  low:      '#22C68A',
+};
 
 /* ── Quick action definitions ── */
 const quickActions = [
@@ -90,8 +85,147 @@ const quickActions = [
   { label: 'Report veloce', icon: BarChart3, accent: 'bg-success/10 text-success' },
 ];
 
+/* ── Helpers ── */
+function formatCurrency(value: number): string {
+  if (value >= 1_000_000) return `€${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `€${(value / 1_000).toFixed(1)}K`.replace('.0K', 'K');
+  return `€${value.toFixed(0)}`;
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'adesso';
+  if (mins < 60) return `${mins} min fa`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} ${hrs === 1 ? 'ora' : 'ore'} fa`;
+  const days = Math.floor(hrs / 24);
+  return `${days} ${days === 1 ? 'giorno' : 'giorni'} fa`;
+}
+
+/* ── Skeleton loaders ── */
+function KpiSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 rounded-md border border-border-subtle bg-bg-secondary p-5 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="h-3 w-20 rounded bg-bg-tertiary" />
+        <div className="h-8 w-8 rounded-md bg-bg-tertiary" />
+      </div>
+      <div className="h-8 w-24 rounded bg-bg-tertiary" />
+    </div>
+  );
+}
+
+function AlertSkeleton() {
+  return (
+    <div className="rounded-lg border border-border-subtle bg-bg-secondary p-4 animate-pulse" style={{ borderLeftWidth: 3, borderLeftColor: 'var(--border-subtle)' }}>
+      <div className="flex gap-3">
+        <div className="h-9 w-9 rounded-lg bg-bg-tertiary shrink-0" />
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="h-4 w-3/4 rounded bg-bg-tertiary" />
+          <div className="h-3 w-full rounded bg-bg-tertiary" />
+          <div className="h-3 w-1/2 rounded bg-bg-tertiary" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [fabOpen, setFabOpen] = useState(false);
+
+  const [bottles, setBottles] = useState<Bottle[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [acquisitions, setAcquisitions] = useState<Acquisition[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const orgId = DEMO_ORG_ID;
+    let cancelled = false;
+
+    async function fetchAll() {
+      try {
+        const [bottlesRes, alertsRes, salesRes, acqRes] = await Promise.all([
+          fetch(`/api/bottles?org_id=${orgId}`),
+          fetch(`/api/alerts?org_id=${orgId}`),
+          fetch(`/api/sales?org_id=${orgId}`),
+          fetch(`/api/acquisitions?org_id=${orgId}`),
+        ]);
+
+        if (!bottlesRes.ok || !alertsRes.ok || !salesRes.ok || !acqRes.ok) {
+          throw new Error('Errore nel caricamento dei dati');
+        }
+
+        const [bottlesJson, alertsJson, salesJson, acqJson] = await Promise.all([
+          bottlesRes.json(),
+          alertsRes.json(),
+          salesRes.json(),
+          acqRes.json(),
+        ]);
+
+        if (cancelled) return;
+
+        setBottles(bottlesJson.data ?? []);
+        setAlerts(alertsJson.data ?? []);
+        setSales(salesJson.data ?? []);
+        setAcquisitions(acqJson.data ?? []);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Errore sconosciuto');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchAll();
+    return () => { cancelled = true; };
+  }, []);
+
+  /* ── Compute KPIs ── */
+  const bottleCount = bottles.filter(
+    (b) => b.status !== 'sold' && b.status !== 'rejected'
+  ).length;
+
+  const revenueMtd = sales
+    .filter((s) => s.status === 'completed')
+    .reduce((sum, s) => sum + (s.total_amount ?? 0), 0);
+
+  const dealsInAttesa =
+    acquisitions.filter((a) => a.status === 'negotiating').length +
+    sales.filter((s) => s.status === 'negotiating').length;
+
+  const inventoryStatuses = new Set(['in_inventory', 'listed', 'valued', 'acquired']);
+  const inventoryValue = bottles
+    .filter((b) => inventoryStatuses.has(b.status))
+    .reduce((sum, b) => sum + (b.target_sell_price ?? b.market_price_high ?? 0), 0);
+
+  const kpis = [
+    { label: 'Bottiglie oggi', value: String(bottleCount), icon: Wine },
+    { label: 'Revenue MTD', value: formatCurrency(revenueMtd), icon: DollarSign },
+    { label: 'Deal in attesa', value: String(dealsInAttesa), icon: Clock },
+    { label: 'Valore inventario', value: formatCurrency(inventoryValue), icon: Package },
+  ];
+
+  /* ── Error state ── */
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20 animate-fade-in">
+        <AlertCircle className="h-12 w-12 text-semantic-danger" />
+        <h2 className="text-title-3 text-text-primary">Errore</h2>
+        <p className="text-body-sm text-text-secondary max-w-md text-center">{error}</p>
+        <button
+          onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
+          className="text-body-sm font-medium text-accent-copper hover:text-accent-gold transition-colors"
+        >
+          Riprova
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in">
@@ -119,9 +253,10 @@ export default function DashboardPage() {
 
       {/* ── KPI Grid (4 columns) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((kpi) => (
-          <KpiCard key={kpi.label} {...kpi} />
-        ))}
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
+          : kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} />)
+        }
       </div>
 
       {/* ── Main content: Alerts (2/3) + Activity Feed (1/3) ── */}
@@ -132,6 +267,9 @@ export default function DashboardPage() {
             <h2 className="text-title-3 text-text-primary flex items-center gap-2">
               <Bell className="h-5 w-5 text-accent-copper" />
               Avvisi
+              {!loading && alerts.length > 0 && (
+                <span className="text-caption font-medium text-text-tertiary">({alerts.length})</span>
+              )}
             </h2>
             <button className="text-caption text-accent-copper hover:text-accent-gold transition-colors flex items-center gap-1">
               Vedi tutti <ChevronRight className="h-3 w-3" />
@@ -140,51 +278,60 @@ export default function DashboardPage() {
 
           {/* Horizontal-scrollable alert cards on smaller screens, stacked on lg */}
           <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 snap-x snap-mandatory lg:snap-none">
-            {alerts.map((alert) => {
-              const Icon = alert.icon;
-              return (
-                <div
-                  key={alert.title}
-                  className="min-w-[320px] lg:min-w-0 snap-start rounded-lg border border-border-subtle bg-bg-secondary p-4 transition-all duration-200 hover:border-border-medium hover:bg-bg-tertiary group"
-                  style={{ borderLeftWidth: 3, borderLeftColor: alert.accent }}
-                >
-                  <div className="flex gap-3">
-                    <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                      style={{ backgroundColor: `${alert.accent}15` }}
-                    >
-                      <Icon className="h-4.5 w-4.5" style={{ color: alert.accent }} />
-                    </div>
-                    <div className="flex flex-1 flex-col gap-1.5 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="text-body-sm font-medium text-text-primary leading-snug">
-                          {alert.title}
-                        </h4>
-                        <span className="text-caption text-text-tertiary whitespace-nowrap shrink-0">
-                          {alert.timestamp}
-                        </span>
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => <AlertSkeleton key={i} />)
+            ) : alerts.length === 0 ? (
+              <div className="rounded-lg border border-border-subtle bg-bg-secondary p-6 text-center">
+                <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
+                <p className="text-body-sm text-text-secondary">Nessun avviso</p>
+              </div>
+            ) : (
+              alerts.map((alert) => {
+                const config = alertTypeConfig[alert.alert_type];
+                const Icon = config?.icon ?? AlertCircle;
+                const accent = config?.accent ?? priorityAccent[alert.priority] ?? '#3B7FD9';
+
+                return (
+                  <div
+                    key={alert.id}
+                    className="min-w-[320px] lg:min-w-0 snap-start rounded-lg border border-border-subtle bg-bg-secondary p-4 transition-all duration-200 hover:border-border-medium hover:bg-bg-tertiary group"
+                    style={{ borderLeftWidth: 3, borderLeftColor: accent }}
+                  >
+                    <div className="flex gap-3">
+                      <div
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                        style={{ backgroundColor: `${accent}15` }}
+                      >
+                        <Icon className="h-4.5 w-4.5" style={{ color: accent }} />
                       </div>
-                      <p className="text-caption text-text-secondary leading-relaxed">
-                        {alert.message}
-                      </p>
-                      {alert.actions && alert.actions.length > 0 && (
-                        <div className="flex gap-2 mt-1">
-                          {alert.actions.map((action) => (
-                            <button
-                              key={action.label}
-                              className="text-caption font-medium px-2.5 py-1 rounded-md transition-colors"
-                              style={{ color: alert.accent, backgroundColor: `${alert.accent}10` }}
-                            >
-                              {action.label}
-                            </button>
-                          ))}
+                      <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="text-body-sm font-medium text-text-primary leading-snug">
+                            {alert.title}
+                          </h4>
+                          <span className="text-caption text-text-tertiary whitespace-nowrap shrink-0">
+                            {timeAgo(alert.created_at)}
+                          </span>
                         </div>
-                      )}
+                        <p className="text-caption text-text-secondary leading-relaxed">
+                          {alert.message}
+                        </p>
+                        {alert.action_url && (
+                          <div className="flex gap-2 mt-1">
+                            <button
+                              className="text-caption font-medium px-2.5 py-1 rounded-md transition-colors"
+                              style={{ color: accent, backgroundColor: `${accent}10` }}
+                            >
+                              Vedi dettagli
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -199,37 +346,16 @@ export default function DashboardPage() {
           </div>
           <div className="rounded-lg border border-border-subtle bg-bg-secondary overflow-hidden">
             <div className="flex flex-col divide-y divide-border-subtle">
-              {activities.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 p-4 transition-colors hover:bg-bg-tertiary/50"
-                >
-                  {/* Agent color dot */}
-                  <div className="mt-1.5 shrink-0">
-                    <div
-                      className="h-2.5 w-2.5 rounded-full ring-2 ring-offset-1"
-                      style={{
-                        backgroundColor: item.color,
-                        boxShadow: `0 0 0 2px ${item.color}30`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-caption font-semibold uppercase tracking-wide"
-                        style={{ color: item.color }}
-                      >
-                        {item.agent}
-                      </span>
-                      <span className="text-[10px] text-text-disabled">{item.time}</span>
-                    </div>
-                    <span className="text-body-sm text-text-secondary leading-snug">
-                      {item.action}
-                    </span>
-                  </div>
+              {loading ? (
+                <div className="flex items-center justify-center gap-2 p-8">
+                  <Loader2 className="h-4 w-4 animate-spin text-text-tertiary" />
+                  <span className="text-body-sm text-text-secondary">Caricamento...</span>
                 </div>
-              ))}
+              ) : (
+                <div className="flex items-center justify-center p-8">
+                  <span className="text-body-sm text-text-tertiary">Nessuna attività</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

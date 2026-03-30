@@ -1,86 +1,38 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DEMO_ORG_ID } from '@/lib/hooks/use-org';
+import { formatCurrency } from '@/lib/utils';
 
-const sellers = [
-  {
-    name: 'Giovanni Bianchi',
-    email: 'g.bianchi@email.it',
-    phone: '+39 333 1234567',
-    province: 'Verona',
-    type: 'Cantina privata',
-    totalDeals: 3,
-    totalValue: 42000,
-    status: 'active',
-    lastContact: '2 giorni fa',
-  },
-  {
-    name: 'Maria Conti',
-    email: 'm.conti@email.it',
-    phone: '+39 347 9876543',
-    province: 'Milano',
-    type: 'Eredità',
-    totalDeals: 1,
-    totalValue: 18500,
-    status: 'active',
-    lastContact: '5 giorni fa',
-  },
-  {
-    name: 'Paolo Rossi',
-    email: 'p.rossi@email.it',
-    phone: '+39 329 5551234',
-    province: 'Firenze',
-    type: 'Cantina privata',
-    totalDeals: 7,
-    totalValue: 128000,
-    status: 'vip',
-    lastContact: '1 giorno fa',
-  },
-  {
-    name: 'Trattoria Da Enzo',
-    email: 'info@trattoriadaenzo.it',
-    phone: '+39 06 5551234',
-    province: 'Roma',
-    type: 'Ristorante/Bar',
-    totalDeals: 2,
-    totalValue: 15600,
-    status: 'active',
-    lastContact: '1 settimana fa',
-  },
-  {
-    name: 'Carlo Verdi',
-    email: 'c.verdi@email.it',
-    phone: '+39 340 1112233',
-    province: 'Torino',
-    type: 'Cantina privata',
-    totalDeals: 1,
-    totalValue: 9600,
-    status: 'new',
-    lastContact: '3 giorni fa',
-  },
-  {
-    name: 'Elena Marchetti',
-    email: 'e.marchetti@email.it',
-    phone: '+39 338 4445566',
-    province: 'Bologna',
-    type: 'Eredità',
-    totalDeals: 0,
-    totalValue: 0,
-    status: 'lead',
-    lastContact: '10 giorni fa',
-  },
-  {
-    name: 'Ristorante Belvedere',
-    email: 'info@belvedere.it',
-    phone: '+39 045 7778899',
-    province: 'Verona',
-    type: 'Ristorante/Bar',
-    totalDeals: 4,
-    totalValue: 56000,
-    status: 'active',
-    lastContact: '4 giorni fa',
-  },
-];
+interface Seller {
+  id: string;
+  org_id: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  whatsapp: string | null;
+  province: string | null;
+  city: string | null;
+  seller_type: 'inheritance' | 'collector' | 'restaurant_closure' | 'liquidation' | 'private';
+  source_channel: 'whatsapp' | 'email' | 'website' | 'facebook' | 'instagram' | 'phone' | 'referral';
+  notes: string | null;
+  total_transactions: number;
+  total_value: number;
+  rating: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const sellerTypeLabels: Record<Seller['seller_type'], string> = {
+  inheritance: 'Eredità',
+  collector: 'Collezionista',
+  restaurant_closure: 'Ristorante/Bar',
+  liquidation: 'Liquidazione',
+  private: 'Cantina privata',
+};
 
 const statusConfig: Record<string, { label: string; variant: 'success' | 'premium' | 'info' | 'neutral' }> = {
   active: { label: 'Attivo', variant: 'success' },
@@ -89,7 +41,76 @@ const statusConfig: Record<string, { label: string; variant: 'success' | 'premiu
   lead: { label: 'Lead', variant: 'neutral' },
 };
 
+function getSellerStatus(seller: Seller): string {
+  if (seller.total_value > 100000) return 'vip';
+  if (seller.total_transactions > 0) return 'active';
+  const createdAt = new Date(seller.created_at);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  if (seller.total_transactions === 0 && createdAt > thirtyDaysAgo) return 'new';
+  return 'lead';
+}
+
+function SkeletonRow() {
+  return (
+    <tr className="animate-pulse">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-full bg-bg-tertiary" />
+          <div className="flex flex-col gap-1.5">
+            <div className="h-4 w-32 rounded bg-bg-tertiary" />
+            <div className="h-3 w-20 rounded bg-bg-tertiary" />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 hidden md:table-cell">
+        <div className="flex flex-col gap-1.5">
+          <div className="h-3 w-36 rounded bg-bg-tertiary" />
+          <div className="h-3 w-28 rounded bg-bg-tertiary" />
+        </div>
+      </td>
+      <td className="px-4 py-3 hidden lg:table-cell"><div className="h-4 w-20 rounded bg-bg-tertiary" /></td>
+      <td className="px-4 py-3 hidden lg:table-cell"><div className="h-4 w-24 rounded bg-bg-tertiary" /></td>
+      <td className="px-4 py-3 text-right"><div className="h-4 w-8 rounded bg-bg-tertiary ml-auto" /></td>
+      <td className="px-4 py-3 text-right hidden sm:table-cell"><div className="h-4 w-16 rounded bg-bg-tertiary ml-auto" /></td>
+      <td className="px-4 py-3 text-center"><div className="h-5 w-14 rounded-full bg-bg-tertiary mx-auto" /></td>
+    </tr>
+  );
+}
+
 export default function SellersPage() {
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    async function fetchSellers() {
+      try {
+        const res = await fetch(`/api/sellers?org_id=${DEMO_ORG_ID}`);
+        if (!res.ok) throw new Error('Failed to fetch sellers');
+        const json = await res.json();
+        setSellers(json.data ?? []);
+      } catch (err) {
+        console.error('Error fetching sellers:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSellers();
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return sellers;
+    const q = search.toLowerCase();
+    return sellers.filter(
+      (s) =>
+        s.full_name.toLowerCase().includes(q) ||
+        s.email?.toLowerCase().includes(q) ||
+        s.province?.toLowerCase().includes(q) ||
+        s.city?.toLowerCase().includes(q),
+    );
+  }, [sellers, search]);
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -97,7 +118,7 @@ export default function SellersPage() {
         <div>
           <h1 className="text-title-1 text-text-primary">Sellers</h1>
           <p className="text-body-sm text-text-secondary mt-1">
-            {sellers.length} venditori nel CRM
+            {loading ? '...' : `${sellers.length} venditori nel CRM`}
           </p>
         </div>
         <Button>
@@ -112,6 +133,8 @@ export default function SellersPage() {
         <input
           type="text"
           placeholder="Cerca venditori..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           className="flex h-10 w-full rounded-md border border-border-medium bg-bg-tertiary pl-10 pr-4 text-body-sm text-text-primary placeholder:text-text-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 transition-colors"
         />
       </div>
@@ -145,60 +168,85 @@ export default function SellersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle">
-            {sellers.map((seller) => {
-              const config = statusConfig[seller.status] || statusConfig.active;
-              return (
-                <tr
-                  key={seller.email}
-                  className="hover:bg-bg-tertiary/50 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-bg-tertiary text-caption text-text-secondary shrink-0">
-                        {seller.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+            {loading ? (
+              <>
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+              </>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center">
+                  <p className="text-body-sm text-text-tertiary">
+                    Nessun venditore trovato
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((seller) => {
+                const status = getSellerStatus(seller);
+                const config = statusConfig[status] || statusConfig.lead;
+                return (
+                  <tr
+                    key={seller.id}
+                    className="hover:bg-bg-tertiary/50 transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-bg-tertiary text-caption text-text-secondary shrink-0">
+                          {seller.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-body-sm font-medium text-text-primary truncate">
+                            {seller.full_name}
+                          </span>
+                          <span className="text-caption text-text-tertiary">
+                            {sellerTypeLabels[seller.seller_type] ?? seller.seller_type}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-body-sm font-medium text-text-primary truncate">
-                          {seller.name}
-                        </span>
-                        <span className="text-caption text-text-tertiary">
-                          {seller.lastContact}
-                        </span>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <div className="flex flex-col gap-0.5">
+                        {seller.email && (
+                          <span className="text-caption text-text-secondary flex items-center gap-1">
+                            <Mail className="h-3 w-3" /> {seller.email}
+                          </span>
+                        )}
+                        {seller.phone && (
+                          <span className="text-caption text-text-tertiary flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> {seller.phone}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-caption text-text-secondary flex items-center gap-1">
-                        <Mail className="h-3 w-3" /> {seller.email}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <span className="text-body-sm text-text-secondary flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-text-tertiary" /> {seller.province ?? '—'}
                       </span>
-                      <span className="text-caption text-text-tertiary flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {seller.phone}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <span className="text-caption text-text-secondary">
+                        {sellerTypeLabels[seller.seller_type] ?? seller.seller_type}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <span className="text-body-sm text-text-secondary flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-text-tertiary" /> {seller.province}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    <span className="text-caption text-text-secondary">{seller.type}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="text-body-sm text-text-primary">{seller.totalDeals}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right hidden sm:table-cell">
-                    <span className="text-body-sm text-text-primary">
-                      €{(seller.totalValue / 1000).toFixed(0)}K
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Badge variant={config.variant}>{config.label}</Badge>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-body-sm text-text-primary">{seller.total_transactions}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right hidden sm:table-cell">
+                      <span className="text-body-sm text-text-primary">
+                        {formatCurrency(seller.total_value)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge variant={config.variant}>{config.label}</Badge>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

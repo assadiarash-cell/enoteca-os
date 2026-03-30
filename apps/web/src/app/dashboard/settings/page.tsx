@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Bell, CreditCard, Globe, Plug, Save } from 'lucide-react';
+import { Bell, CreditCard, Globe, Plug, Save, Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { DEMO_ORG_ID } from '@/lib/hooks/use-org';
 
 const tabs = [
   { id: 'general', label: 'Generale', icon: Globe },
@@ -25,8 +27,77 @@ const integrations = [
   { name: 'Vivino', description: 'Marketplace vini', connected: false },
 ];
 
+const planLabels: Record<string, string> = {
+  trial: 'Trial',
+  base: 'Base',
+  pro: 'Pro',
+  enterprise: 'Enterprise',
+};
+
+const planVariant: Record<string, 'default' | 'premium' | 'secondary'> = {
+  trial: 'secondary',
+  base: 'default',
+  pro: 'premium',
+  enterprise: 'premium',
+};
+
+interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  plan: 'trial' | 'base' | 'pro' | 'enterprise';
+  logo_url: string | null;
+  whatsapp_number: string | null;
+  email: string | null;
+  settings: Record<string, unknown> | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
+  const [org, setOrg] = useState<Organization | null>(null);
+  const [bottleCount, setBottleCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function fetchData() {
+      setLoading(true);
+
+      const [orgResult, bottleResult] = await Promise.all([
+        supabase
+          .from('organizations')
+          .select('*')
+          .eq('id', DEMO_ORG_ID)
+          .single(),
+        supabase
+          .from('bottles')
+          .select('id', { count: 'exact' })
+          .eq('org_id', DEMO_ORG_ID),
+      ]);
+
+      if (orgResult.data) {
+        setOrg(orgResult.data as Organization);
+      }
+
+      setBottleCount(bottleResult.count ?? 0);
+      setLoading(false);
+    }
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-6 w-6 animate-spin text-text-secondary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -69,25 +140,19 @@ export default function SettingsPage() {
               <CardContent className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="company" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Nome azienda</label>
-                  <Input id="company" defaultValue="Vini Antichi S.r.l." />
+                  <Input id="company" defaultValue={org?.name ?? ''} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="vat" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">P.IVA</label>
-                  <Input id="vat" defaultValue="IT12345678901" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="city" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Città</label>
-                    <Input id="city" defaultValue="Milano" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="province" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Provincia</label>
-                    <Input id="province" defaultValue="MI" />
-                  </div>
+                  <label htmlFor="email" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Email</label>
+                  <Input id="email" type="email" defaultValue={org?.email ?? ''} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="address" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Indirizzo</label>
-                  <Input id="address" defaultValue="Via Monte Napoleone 42" />
+                  <label htmlFor="slug" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Slug</label>
+                  <Input id="slug" defaultValue={org?.slug ?? ''} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="whatsapp" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">WhatsApp</label>
+                  <Input id="whatsapp" defaultValue={org?.whatsapp_number ?? ''} />
                 </div>
                 <Button className="w-fit">
                   <Save className="h-4 w-4" />
@@ -96,6 +161,7 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
+            {/* TODO: fetch from auth.users when auth is implemented */}
             <Card>
               <CardHeader>
                 <CardTitle>Account operatore</CardTitle>
@@ -214,14 +280,16 @@ export default function SettingsPage() {
                     <CardTitle>Piano corrente</CardTitle>
                     <CardDescription>Il tuo abbonamento attivo</CardDescription>
                   </div>
-                  <Badge variant="premium">Pro</Badge>
+                  <Badge variant={planVariant[org?.plan ?? 'trial'] ?? 'default'}>
+                    {planLabels[org?.plan ?? 'trial'] ?? org?.plan}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div className="flex flex-col gap-1 p-4 rounded-md bg-bg-tertiary">
                     <span className="text-overline text-text-tertiary uppercase">Costo mensile</span>
-                    <span className="text-title-2 text-text-primary">€299</span>
+                    <span className="text-title-2 text-text-primary">&euro;299</span>
                   </div>
                   <div className="flex flex-col gap-1 p-4 rounded-md bg-bg-tertiary">
                     <span className="text-overline text-text-tertiary uppercase">Prossimo rinnovo</span>
@@ -247,7 +315,7 @@ export default function SettingsPage() {
               <CardContent>
                 <div className="flex flex-col gap-4">
                   {[
-                    { label: 'Bottiglie in inventario', used: 272, limit: 500 },
+                    { label: 'Bottiglie in inventario', used: bottleCount, limit: 500 },
                     { label: 'Valutazioni AI / mese', used: 89, limit: 200 },
                     { label: 'Operatori', used: 3, limit: 5 },
                     { label: 'Storage foto', used: 4.2, limit: 10, unit: 'GB' },

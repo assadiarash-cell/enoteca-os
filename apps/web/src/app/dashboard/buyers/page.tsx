@@ -1,94 +1,101 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Globe, Mail, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DEMO_ORG_ID } from '@/lib/hooks/use-org';
+import { formatCurrency } from '@/lib/utils';
 
-const buyers = [
-  {
-    name: 'Alexander Schmidt',
-    email: 'a.schmidt@weinhaus.de',
-    country: 'Germania',
-    segment: 'Premium',
-    totalPurchases: 12,
-    totalSpent: 186000,
-    avgOrder: 15500,
-    lastPurchase: '1 giorno fa',
-    status: 'premium',
-  },
-  {
-    name: 'Tanaka Yuki',
-    email: 'yuki@sake-imports.jp',
-    country: 'Giappone',
-    segment: 'Enterprise',
-    totalPurchases: 28,
-    totalSpent: 342000,
-    avgOrder: 12214,
-    lastPurchase: '4 giorni fa',
-    status: 'enterprise',
-  },
-  {
-    name: 'James Williams',
-    email: 'j.williams@londonwines.uk',
-    country: 'Regno Unito',
-    segment: 'Premium',
-    totalPurchases: 8,
-    totalSpent: 94000,
-    avgOrder: 11750,
-    lastPurchase: '6 giorni fa',
-    status: 'premium',
-  },
-  {
-    name: 'Chen Wei',
-    email: 'chen.wei@hkfinearts.hk',
-    country: 'Hong Kong',
-    segment: 'Enterprise',
-    totalPurchases: 45,
-    totalSpent: 520000,
-    avgOrder: 11555,
-    lastPurchase: '2 giorni fa',
-    status: 'enterprise',
-  },
-  {
-    name: 'Robert Johnson',
-    email: 'rjohnson@collector.us',
-    country: 'Stati Uniti',
-    segment: 'Standard',
-    totalPurchases: 3,
-    totalSpent: 18600,
-    avgOrder: 6200,
-    lastPurchase: '1 settimana fa',
-    status: 'standard',
-  },
-  {
-    name: 'Sophie Dubois',
-    email: 's.dubois@caviste.fr',
-    country: 'Francia',
-    segment: 'Premium',
-    totalPurchases: 15,
-    totalSpent: 198000,
-    avgOrder: 13200,
-    lastPurchase: '3 giorni fa',
-    status: 'premium',
-  },
-  {
-    name: 'Marco Ferrero',
-    email: 'm.ferrero@enoteca.it',
-    country: 'Italia',
-    segment: 'Standard',
-    totalPurchases: 6,
-    totalSpent: 32000,
-    avgOrder: 5333,
-    lastPurchase: '2 settimane fa',
-    status: 'standard',
-  },
-];
+interface Buyer {
+  id: string;
+  org_id: string;
+  full_name: string;
+  company_name: string | null;
+  buyer_type: 'dealer_international' | 'dealer_domestic' | 'collector' | 'restaurant' | 'bar';
+  phone: string | null;
+  email: string | null;
+  whatsapp: string | null;
+  country: string | null;
+  city: string | null;
+  preferences: Record<string, unknown> | null;
+  total_purchases: number;
+  total_spent: number;
+  avg_deal_value: number;
+  payment_reliability: number | null;
+  last_purchase_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
-const statusConfig: Record<string, { label: string; variant: 'premium' | 'wine' | 'neutral' }> = {
+const segmentConfig: Record<string, { label: string; variant: 'wine' | 'premium' | 'neutral' }> = {
   enterprise: { label: 'Enterprise', variant: 'wine' },
   premium: { label: 'Premium', variant: 'premium' },
   standard: { label: 'Standard', variant: 'neutral' },
 };
 
+function getBuyerSegment(buyer: Buyer): string {
+  if (buyer.total_spent > 300000) return 'enterprise';
+  if (buyer.total_spent > 100000) return 'premium';
+  return 'standard';
+}
+
+function SkeletonRow() {
+  return (
+    <tr className="animate-pulse">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-full bg-bg-tertiary" />
+          <div className="flex flex-col gap-1.5">
+            <div className="h-4 w-32 rounded bg-bg-tertiary" />
+            <div className="h-3 w-36 rounded bg-bg-tertiary" />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 hidden md:table-cell"><div className="h-4 w-24 rounded bg-bg-tertiary" /></td>
+      <td className="px-4 py-3 text-right"><div className="h-4 w-8 rounded bg-bg-tertiary ml-auto" /></td>
+      <td className="px-4 py-3 text-right hidden sm:table-cell"><div className="h-4 w-16 rounded bg-bg-tertiary ml-auto" /></td>
+      <td className="px-4 py-3 text-right hidden lg:table-cell"><div className="h-4 w-16 rounded bg-bg-tertiary ml-auto" /></td>
+      <td className="px-4 py-3 text-center"><div className="h-5 w-16 rounded-full bg-bg-tertiary mx-auto" /></td>
+    </tr>
+  );
+}
+
 export default function BuyersPage() {
+  const [buyers, setBuyers] = useState<Buyer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    async function fetchBuyers() {
+      try {
+        const res = await fetch(`/api/buyers?org_id=${DEMO_ORG_ID}`);
+        if (!res.ok) throw new Error('Failed to fetch buyers');
+        const json = await res.json();
+        setBuyers(json.data ?? []);
+      } catch (err) {
+        console.error('Error fetching buyers:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBuyers();
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return buyers;
+    const q = search.toLowerCase();
+    return buyers.filter(
+      (b) =>
+        b.full_name.toLowerCase().includes(q) ||
+        b.company_name?.toLowerCase().includes(q) ||
+        b.email?.toLowerCase().includes(q) ||
+        b.country?.toLowerCase().includes(q) ||
+        b.city?.toLowerCase().includes(q),
+    );
+  }, [buyers, search]);
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -96,7 +103,7 @@ export default function BuyersPage() {
         <div>
           <h1 className="text-title-1 text-text-primary">Buyers</h1>
           <p className="text-body-sm text-text-secondary mt-1">
-            {buyers.length} buyer nel CRM
+            {loading ? '...' : `${buyers.length} buyer nel CRM`}
           </p>
         </div>
         <Button>
@@ -111,6 +118,8 @@ export default function BuyersPage() {
         <input
           type="text"
           placeholder="Cerca buyer..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           className="flex h-10 w-full rounded-md border border-border-medium bg-bg-tertiary pl-10 pr-4 text-body-sm text-text-primary placeholder:text-text-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 transition-colors"
         />
       </div>
@@ -141,57 +150,76 @@ export default function BuyersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle">
-            {buyers.map((buyer) => {
-              const config = statusConfig[buyer.status] || statusConfig.standard;
-              return (
-                <tr
-                  key={buyer.email}
-                  className="hover:bg-bg-tertiary/50 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-bg-tertiary text-caption text-text-secondary shrink-0">
-                        {buyer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-body-sm font-medium text-text-primary truncate">
-                            {buyer.name}
-                          </span>
-                          {buyer.status === 'enterprise' && (
-                            <Star className="h-3 w-3 text-accent-primary fill-accent-primary shrink-0" />
-                          )}
+            {loading ? (
+              <>
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+              </>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-12 text-center">
+                  <p className="text-body-sm text-text-tertiary">
+                    Nessun buyer trovato
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((buyer) => {
+                const segment = getBuyerSegment(buyer);
+                const config = segmentConfig[segment] || segmentConfig.standard;
+                return (
+                  <tr
+                    key={buyer.id}
+                    className="hover:bg-bg-tertiary/50 transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-bg-tertiary text-caption text-text-secondary shrink-0">
+                          {buyer.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </div>
-                        <span className="text-caption text-text-tertiary flex items-center gap-1">
-                          <Mail className="h-3 w-3" /> {buyer.email}
-                        </span>
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-body-sm font-medium text-text-primary truncate">
+                              {buyer.full_name}
+                            </span>
+                            {segment === 'enterprise' && (
+                              <Star className="h-3 w-3 text-accent-primary fill-accent-primary shrink-0" />
+                            )}
+                          </div>
+                          <span className="text-caption text-text-tertiary flex items-center gap-1">
+                            <Mail className="h-3 w-3" /> {buyer.email ?? '—'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="text-body-sm text-text-secondary flex items-center gap-1">
-                      <Globe className="h-3 w-3 text-text-tertiary" /> {buyer.country}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="text-body-sm text-text-primary">{buyer.totalPurchases}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right hidden sm:table-cell">
-                    <span className="text-body-sm font-medium text-accent-secondary">
-                      €{(buyer.totalSpent / 1000).toFixed(0)}K
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right hidden lg:table-cell">
-                    <span className="text-body-sm text-text-primary">
-                      €{buyer.avgOrder.toLocaleString('it-IT')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Badge variant={config.variant}>{config.label}</Badge>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <span className="text-body-sm text-text-secondary flex items-center gap-1">
+                        <Globe className="h-3 w-3 text-text-tertiary" /> {buyer.country ?? '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-body-sm text-text-primary">{buyer.total_purchases}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right hidden sm:table-cell">
+                      <span className="text-body-sm font-medium text-accent-secondary">
+                        {formatCurrency(buyer.total_spent)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right hidden lg:table-cell">
+                      <span className="text-body-sm text-text-primary">
+                        {formatCurrency(buyer.avg_deal_value)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge variant={config.variant}>{config.label}</Badge>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
