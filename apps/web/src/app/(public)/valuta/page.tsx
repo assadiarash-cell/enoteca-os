@@ -195,29 +195,23 @@ export default function ValutaPage() {
           <div className="flex flex-col gap-4 border-t border-border-subtle pt-8">
             <h3 className="text-title-3 text-text-primary">I tuoi dati</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                id="nome"
-                label="Nome"
-                placeholder="Mario"
-              />
-              <Input
-                id="cognome"
-                label="Cognome"
-                placeholder="Rossi"
-              />
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="nome" className="text-caption text-text-secondary uppercase tracking-wider">Nome</label>
+                <Input id="nome" placeholder="Mario" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="cognome" className="text-caption text-text-secondary uppercase tracking-wider">Cognome</label>
+                <Input id="cognome" placeholder="Rossi" />
+              </div>
             </div>
-            <Input
-              id="email"
-              label="Email"
-              type="email"
-              placeholder="mario@esempio.it"
-            />
-            <Input
-              id="telefono"
-              label="Telefono (opzionale)"
-              type="tel"
-              placeholder="+39 333 1234567"
-            />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-caption text-text-secondary uppercase tracking-wider">Email</label>
+              <Input id="email" type="email" placeholder="mario@esempio.it" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="telefono" className="text-caption text-text-secondary uppercase tracking-wider">Telefono (opzionale)</label>
+              <Input id="telefono" type="tel" placeholder="+39 333 1234567" />
+            </div>
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="note"

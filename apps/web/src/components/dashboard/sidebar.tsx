@@ -14,16 +14,17 @@ import {
   Bot,
   Settings,
   LogOut,
+  ScanLine,
 } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Bottles', href: '/dashboard/bottles', icon: Wine },
+  { label: 'Scan', href: '/dashboard/scan', icon: ScanLine },
   { label: 'Deals', href: '/dashboard/deals', icon: Handshake },
   { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { label: 'Sellers', href: '/dashboard/sellers', icon: Users },
   { label: 'Buyers', href: '/dashboard/buyers', icon: UserCheck },
-  { label: 'Content', href: '/dashboard/content', icon: FileText },
   { label: 'AI Agents', href: '/dashboard/agents', icon: Bot },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];

@@ -67,13 +67,28 @@ export default function SettingsPage() {
                 <CardDescription>Informazioni della tua attività</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <Input id="company" label="Nome azienda" defaultValue="Vini Antichi S.r.l." />
-                <Input id="vat" label="P.IVA" defaultValue="IT12345678901" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Input id="city" label="Città" defaultValue="Milano" />
-                  <Input id="province" label="Provincia" defaultValue="MI" />
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="company" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Nome azienda</label>
+                  <Input id="company" defaultValue="Vini Antichi S.r.l." />
                 </div>
-                <Input id="address" label="Indirizzo" defaultValue="Via Monte Napoleone 42" />
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="vat" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">P.IVA</label>
+                  <Input id="vat" defaultValue="IT12345678901" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="city" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Città</label>
+                    <Input id="city" defaultValue="Milano" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="province" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Provincia</label>
+                    <Input id="province" defaultValue="MI" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="address" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Indirizzo</label>
+                  <Input id="address" defaultValue="Via Monte Napoleone 42" />
+                </div>
                 <Button className="w-fit">
                   <Save className="h-4 w-4" />
                   Salva modifiche
@@ -87,8 +102,14 @@ export default function SettingsPage() {
                 <CardDescription>Le tue credenziali di accesso</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <Input id="op-name" label="Nome completo" defaultValue="Marco Albertini" />
-                <Input id="op-email" label="Email" type="email" defaultValue="marco@viniantichi.it" />
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="op-name" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Nome completo</label>
+                  <Input id="op-name" defaultValue="Marco Albertini" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="op-email" className="text-[12px] text-[#A09E96] uppercase tracking-wider font-medium">Email</label>
+                  <Input id="op-email" type="email" defaultValue="marco@viniantichi.it" />
+                </div>
                 <Button variant="outline" className="w-fit">
                   Cambia password
                 </Button>
