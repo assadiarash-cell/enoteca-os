@@ -2,39 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Wine,
-  Sparkles,
-  Brain,
-  Bot,
-  Workflow,
-  ArrowRight,
-  Upload,
-  Building2,
-  Mail,
-  Phone,
-} from 'lucide-react';
-
-const valueProps = [
-  {
-    icon: Brain,
-    title: 'AI-powered valuations',
-    description:
-      'Get instant, accurate valuations for rare bottles using our proprietary AI trained on millions of auction results and market data.',
-  },
-  {
-    icon: Bot,
-    title: '19 autonomous agents',
-    description:
-      'From lead qualification to deal closing, our AI agents handle the heavy lifting so you can focus on building relationships.',
-  },
-  {
-    icon: Workflow,
-    title: 'Automated workflows',
-    description:
-      'Streamline your operations with intelligent automation that handles inventory, communications, and logistics end-to-end.',
-  },
-];
+import { Wine, Sparkles, Bot, Zap, Upload, ChevronRight } from 'lucide-react';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -42,225 +10,232 @@ export default function OnboardingPage() {
   const [orgName, setOrgName] = useState('');
   const [orgEmail, setOrgEmail] = useState('');
   const [orgWhatsApp, setOrgWhatsApp] = useState('');
+  const [orgWhatsAppPrefix, setOrgWhatsAppPrefix] = useState('');
 
-  // Step 0: Hero
-  if (step === 0) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#07070D] px-6 text-center">
-        {/* Background glow */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-[500px] w-[500px] rounded-full bg-[#C9843A]/5 blur-[150px]" />
+  const handleNext = () => {
+    if (step < 2) {
+      setStep(step + 1);
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#07070D] text-[#EEECE7] overflow-hidden">
+      {step === 0 && (
+        <div className="relative h-screen flex flex-col items-center justify-end">
+          {/* Hero Image */}
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://images.unsplash.com/photo-1765850257843-aa029ab7769c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB3aW5lJTIwY2VsbGFyJTIwZGFya3xlbnwxfHx8fDE3NzQ4MTcxNzl8MA&ixlib=rb-4.1.0&q=80&w=1080"
+              alt="Wine cellar"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#07070D]/60 via-transparent to-[#07070D]" />
+          </div>
+
+          {/* Content */}
+          <div className="relative z-10 w-full max-w-md mx-auto px-4 pb-16">
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+              <div className="w-16 h-16 rounded-2xl bg-[#C9843A]/10 border border-[#C9843A]/20 flex items-center justify-center">
+                <Wine className="w-8 h-8 text-[#C9843A]" strokeWidth={1.5} />
+              </div>
+            </div>
+
+            {/* Text */}
+            <div className="text-center mb-12">
+              <h1 className="text-4xl md:text-5xl font-bold text-[#EEECE7] tracking-tight mb-3">
+                ENOTECA OS
+              </h1>
+              <p className="text-[16px] text-[#A09E96]">
+                The operating system for rare bottles
+              </p>
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={handleNext}
+              className="w-full h-14 bg-[#C9843A] hover:bg-[#D4A05A] text-[#07070D] rounded-xl font-medium text-[16px] transition-all active:scale-[0.97]"
+            >
+              Get Started
+            </button>
+          </div>
         </div>
+      )}
 
-        <div className="relative z-10 flex flex-col items-center gap-8 max-w-lg">
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#C9843A]/10 shadow-lg shadow-[#C9843A]/10">
-            <Wine className="h-10 w-10 text-[#C9843A]" />
-          </div>
+      {step === 1 && (
+        <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
+          <div className="w-full max-w-md mx-auto space-y-6">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <h2 className="text-[28px] font-bold text-[#EEECE7] mb-3 leading-tight">
+                Autonomous wine operations
+              </h2>
+              <p className="text-[16px] text-[#A09E96]">
+                Built for professional dealers
+              </p>
+            </div>
 
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-[#EEECE7] tracking-tight">
-              ENOTECA OS
-            </h1>
-            <p className="mt-4 text-lg text-[#EEECE7]/50">
-              The operating system for rare bottles
-            </p>
-          </div>
-
-          <button
-            onClick={() => setStep(1)}
-            className="mt-4 inline-flex h-14 items-center justify-center gap-2 rounded-xl bg-[#C9843A] px-10 text-base font-semibold text-white transition-all hover:brightness-110 shadow-lg shadow-[#C9843A]/20"
-          >
-            Get Started
-            <ArrowRight className="h-5 w-5" />
-          </button>
-
-          <p className="text-xs text-[#EEECE7]/30">
-            Set up your organization in under 2 minutes
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Step 1: Value Props
-  if (step === 1) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#07070D] px-6 py-16">
-        <div className="w-full max-w-lg">
-          <div className="mb-10 text-center">
-            <Sparkles className="mx-auto mb-4 h-8 w-8 text-[#C9843A]" />
-            <h2 className="text-3xl font-bold text-[#EEECE7]">
-              Everything you need
-            </h2>
-            <p className="mt-2 text-[#EEECE7]/50">
-              Built for serious dealers and collectors
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {valueProps.map((prop) => (
-              <div
-                key={prop.title}
-                className="rounded-xl border border-white/5 bg-[#0D0D15] p-6 transition-all hover:border-[#C9843A]/20"
-              >
+            {/* Value Cards */}
+            <div className="space-y-4">
+              <div className="bg-[#0D0D15] rounded-xl p-6 border border-[rgba(255,255,255,0.06)]">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#C9843A]/10">
-                    <prop.icon className="h-5 w-5 text-[#C9843A]" />
+                  <div className="w-12 h-12 rounded-lg bg-[#C9843A]/10 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-6 h-6 text-[#C9843A]" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-[#EEECE7]">
-                      {prop.title}
+                    <h3 className="text-[18px] font-semibold text-[#EEECE7] mb-2">
+                      AI-powered valuations
                     </h3>
-                    <p className="mt-1 text-sm text-[#EEECE7]/50 leading-relaxed">
-                      {prop.description}
+                    <p className="text-[14px] text-[#A09E96]">
+                      Get accurate market prices in 90 seconds with our AI analysis engine
                     </p>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Page Indicators */}
-          <div className="mt-10 flex items-center justify-center gap-2">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === 1 ? 'w-8 bg-[#C9843A]' : 'w-1.5 bg-white/20'
-                }`}
-              />
-            ))}
-          </div>
+              <div className="bg-[#0D0D15] rounded-xl p-6 border border-[rgba(255,255,255,0.06)]">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-[#C9843A]/10 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-6 h-6 text-[#C9843A]" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h3 className="text-[18px] font-semibold text-[#EEECE7] mb-2">
+                      19 autonomous agents
+                    </h3>
+                    <p className="text-[14px] text-[#A09E96]">
+                      Working 24/7 on acquisitions, pricing, listings, and deal closure
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-          <button
-            onClick={() => setStep(2)}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9843A] py-4 text-base font-semibold text-white transition-all hover:brightness-110 shadow-lg shadow-[#C9843A]/20"
-          >
-            Continue
-            <ArrowRight className="h-4 w-4" />
-          </button>
-
-          <button
-            onClick={() => setStep(0)}
-            className="mt-3 w-full py-2 text-sm text-[#EEECE7]/40 hover:text-[#EEECE7]/60 transition-colors"
-          >
-            Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Step 2: Organization Setup
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#07070D] px-6 py-16">
-      <div className="w-full max-w-lg">
-        <div className="mb-10 text-center">
-          <Building2 className="mx-auto mb-4 h-8 w-8 text-[#C9843A]" />
-          <h2 className="text-3xl font-bold text-[#EEECE7]">
-            Set up your organization
-          </h2>
-          <p className="mt-2 text-[#EEECE7]/50">
-            Tell us about your business
-          </p>
-        </div>
-
-        <div className="space-y-5">
-          {/* Org Name */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#EEECE7]/70">
-              Organization name
-            </label>
-            <div className="relative">
-              <Building2 className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EEECE7]/30" />
-              <input
-                type="text"
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                placeholder="Enoteca di Marco"
-                className="w-full rounded-lg border border-white/10 bg-[#0D0D15] py-3 pl-10 pr-4 text-[#EEECE7] outline-none placeholder:text-[#EEECE7]/25 focus:border-[#C9843A] transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#EEECE7]/70">
-              Business email
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EEECE7]/30" />
-              <input
-                type="email"
-                value={orgEmail}
-                onChange={(e) => setOrgEmail(e.target.value)}
-                placeholder="info@enoteca.com"
-                className="w-full rounded-lg border border-white/10 bg-[#0D0D15] py-3 pl-10 pr-4 text-[#EEECE7] outline-none placeholder:text-[#EEECE7]/25 focus:border-[#C9843A] transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* WhatsApp */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#EEECE7]/70">
-              WhatsApp number
-            </label>
-            <div className="relative">
-              <Phone className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EEECE7]/30" />
-              <input
-                type="tel"
-                value={orgWhatsApp}
-                onChange={(e) => setOrgWhatsApp(e.target.value)}
-                placeholder="+39 333 123 4567"
-                className="w-full rounded-lg border border-white/10 bg-[#0D0D15] py-3 pl-10 pr-4 text-[#EEECE7] outline-none placeholder:text-[#EEECE7]/25 focus:border-[#C9843A] transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Logo Upload */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[#EEECE7]/70">
-              Organization logo
-            </label>
-            <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-white/10 bg-[#0D0D15] p-8 hover:border-[#C9843A]/40 transition-colors cursor-pointer">
-              <div className="flex flex-col items-center gap-2 text-center">
-                <Upload className="h-6 w-6 text-[#EEECE7]/30" />
-                <p className="text-sm text-[#EEECE7]/50">
-                  Drop your logo here or click to upload
-                </p>
-                <p className="text-xs text-[#EEECE7]/25">PNG, SVG up to 2MB</p>
+              <div className="bg-[#0D0D15] rounded-xl p-6 border border-[rgba(255,255,255,0.06)]">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-[#C9843A]/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-6 h-6 text-[#C9843A]" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h3 className="text-[18px] font-semibold text-[#EEECE7] mb-2">
+                      Automated workflows
+                    </h3>
+                    <p className="text-[14px] text-[#A09E96]">
+                      From WhatsApp inquiry to deal closure, fully automated
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Navigation */}
+            <div className="flex items-center justify-center gap-2 pt-8">
+              <div className="w-2 h-2 rounded-full bg-[#6B6963]" />
+              <div className="w-6 h-2 rounded-full bg-[#C9843A]" />
+              <div className="w-2 h-2 rounded-full bg-[#6B6963]" />
+            </div>
+
+            <button
+              onClick={handleNext}
+              className="w-full h-14 bg-[#C9843A] hover:bg-[#D4A05A] text-[#07070D] rounded-xl font-medium text-[16px] transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+            >
+              Continue
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Page Indicators */}
-        <div className="mt-10 flex items-center justify-center gap-2">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className={`h-1.5 rounded-full transition-all ${
-                i === 2 ? 'w-8 bg-[#C9843A]' : 'w-1.5 bg-white/20'
-              }`}
-            />
-          ))}
+      {step === 2 && (
+        <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
+          <div className="w-full max-w-md mx-auto">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-[28px] font-bold text-[#EEECE7] mb-3">
+                Setup your organization
+              </h2>
+              <p className="text-[16px] text-[#A09E96]">
+                Let&apos;s configure your workspace
+              </p>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-5">
+              <div>
+                <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                  Organization Name
+                </label>
+                <input
+                  type="text"
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  placeholder="Enter organization name"
+                  className="w-full h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 text-[16px] text-[#EEECE7] placeholder:text-[#6B6963] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={orgEmail}
+                  onChange={(e) => setOrgEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 text-[16px] text-[#EEECE7] placeholder:text-[#6B6963] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                  WhatsApp Number
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={orgWhatsAppPrefix}
+                    onChange={(e) => setOrgWhatsAppPrefix(e.target.value)}
+                    placeholder="+39"
+                    className="w-20 h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 text-[16px] text-[#EEECE7] placeholder:text-[#6B6963] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
+                  />
+                  <input
+                    type="tel"
+                    value={orgWhatsApp}
+                    onChange={(e) => setOrgWhatsApp(e.target.value)}
+                    placeholder="123 456 7890"
+                    className="flex-1 h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 text-[16px] text-[#EEECE7] placeholder:text-[#6B6963] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                  Organization Logo
+                </label>
+                <div className="w-full h-32 bg-[#1C1C2A] border-2 border-dashed border-[rgba(255,255,255,0.12)] rounded-xl flex flex-col items-center justify-center gap-2 hover:border-[#C9843A]/50 transition-colors cursor-pointer">
+                  <Upload className="w-8 h-8 text-[#6B6963]" strokeWidth={1.5} />
+                  <span className="text-[14px] text-[#6B6963]">Upload logo</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center justify-center gap-2 pt-8 pb-4">
+              <div className="w-2 h-2 rounded-full bg-[#6B6963]" />
+              <div className="w-2 h-2 rounded-full bg-[#6B6963]" />
+              <div className="w-6 h-2 rounded-full bg-[#C9843A]" />
+            </div>
+
+            <button
+              onClick={handleNext}
+              className="w-full h-14 bg-[#C9843A] hover:bg-[#D4A05A] text-[#07070D] rounded-xl font-medium text-[16px] transition-all active:scale-[0.97]"
+            >
+              Create Organization
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9843A] py-4 text-base font-semibold text-white transition-all hover:brightness-110 shadow-lg shadow-[#C9843A]/20"
-        >
-          Create Organization
-          <ArrowRight className="h-4 w-4" />
-        </button>
-
-        <button
-          onClick={() => setStep(1)}
-          className="mt-3 w-full py-2 text-sm text-[#EEECE7]/40 hover:text-[#EEECE7]/60 transition-colors"
-        >
-          Back
-        </button>
-      </div>
+      )}
     </div>
   );
 }

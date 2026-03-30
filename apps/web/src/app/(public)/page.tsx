@@ -2,89 +2,65 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import {
-  Wine,
-  Upload,
-  Phone,
-  Star,
-  Sparkles,
-  Camera,
-  Bot,
-  Banknote,
-  ArrowRight,
-  ChevronRight,
-  MapPin,
-  Mail,
-  User,
-  X,
-} from 'lucide-react';
+import { Upload, Phone, Star, Wine, Sparkles, CheckCircle } from 'lucide-react';
 
 const steps = [
   {
-    icon: Camera,
-    emoji: '📸',
+    number: 1,
+    icon: '\uD83D\uDCF8',
     title: 'Scatta una foto',
-    description:
-      'Fotografa le tue bottiglie con il cellulare. La nostra AI le riconosce in pochi secondi.',
+    description: 'Carica le immagini delle tue bottiglie',
   },
   {
-    icon: Bot,
-    emoji: '🤖',
+    number: 2,
+    icon: '\uD83E\uDD16',
     title: 'Valutazione AI',
-    description:
-      'Il nostro sistema analizza etichetta, annata, produttore e condizioni per darti un prezzo accurato.',
+    description: 'Analisi automatica in 90 secondi',
   },
   {
-    icon: Banknote,
-    emoji: '💰',
+    number: 3,
+    icon: '\uD83D\uDCB0',
     title: 'Pagamento immediato',
-    description:
-      'Accetta l\'offerta e ricevi il pagamento entro 48 ore. Semplice e trasparente.',
+    description: 'Offerta e ritiro in 24-48 ore',
   },
 ];
 
 const testimonials = [
   {
-    name: 'Marco R.',
+    name: 'Marco Rossi',
     location: 'Milano',
     rating: 5,
-    text: 'Ho venduto la mia collezione di Barolo in meno di una settimana. Servizio impeccabile e prezzi onesti.',
+    text: 'Servizio eccellente! Ho venduto una collezione ereditata in meno di una settimana. Valutazione accurata e pagamento immediato.',
   },
   {
-    name: 'Giulia T.',
+    name: 'Elena Bianchi',
     location: 'Roma',
     rating: 5,
-    text: 'Avevo ereditato una cantina piena di bottiglie e non sapevo il loro valore. ENOTECA OS mi ha aiutato a capire tutto.',
+    text: "Professionali e veloci. L'AI ha identificato correttamente tutte le bottiglie, anche quelle pi\u00F9 rare.",
   },
   {
-    name: 'Alessandro B.',
-    location: 'Firenze',
+    name: 'Giuseppe Verdi',
+    location: 'Torino',
     rating: 5,
-    text: 'La valutazione AI è incredibilmente precisa. Ho confrontato con altri esperti e i prezzi erano in linea.',
+    text: 'Ho svuotato la cantina del ristorante. Ottimo prezzo e ritiro a domicilio senza problemi.',
   },
 ];
 
-const blogPosts = [
+const articles = [
   {
-    title: 'Come conservare il vino: guida completa',
-    excerpt:
-      'Scopri le migliori pratiche per conservare le tue bottiglie e mantenerne il valore nel tempo.',
-    date: '15 Mar 2026',
-    readTime: '5 min',
+    image: 'https://images.unsplash.com/photo-1677684025416-925ef298ebd5?w=400',
+    category: 'Guide',
+    title: 'Come conservare bottiglie rare: la guida completa',
   },
   {
-    title: 'I 10 vini italiani più ricercati nel 2026',
-    excerpt:
-      'Dal Sassicaia al Barolo Monfortino: ecco le bottiglie che i collezionisti cercano di più.',
-    date: '10 Mar 2026',
-    readTime: '8 min',
+    image: 'https://images.unsplash.com/photo-1717449361883-bda3da0629e7?w=400',
+    category: 'Mercato',
+    title: 'Barolo vintage: trend di mercato 2026',
   },
   {
-    title: 'Vendere vino online: cosa sapere',
-    excerpt:
-      'Normative, consigli e best practice per vendere le tue bottiglie in modo sicuro e legale.',
-    date: '5 Mar 2026',
-    readTime: '6 min',
+    image: 'https://images.unsplash.com/photo-1772442034167-462f7553016b?w=400',
+    category: 'Investimenti',
+    title: 'Whisky da collezione: i migliori investimenti',
   },
 ];
 
@@ -108,400 +84,327 @@ const provinces = [
 
 export default function SellerPortalPage() {
   const [view, setView] = useState<'landing' | 'upload'>('landing');
-  const [saleType, setSaleType] = useState<'immediate' | 'auction' | 'consignment'>('immediate');
+  const [saleType, setSaleType] = useState('');
   const [province, setProvince] = useState('');
 
   if (view === 'upload') {
     return (
-      <div className="min-h-screen bg-[#07070D] text-[#EEECE7]">
+      <div className="min-h-screen bg-[#07070D]">
         {/* Header */}
-        <header className="border-b border-white/10 px-6 py-4">
-          <div className="mx-auto flex max-w-5xl items-center justify-between">
-            <button
-              onClick={() => setView('landing')}
-              className="flex items-center gap-2 text-[#EEECE7] hover:text-[#C9843A] transition-colors"
-            >
-              <Wine className="h-6 w-6 text-[#C9843A]" />
-              <span className="text-lg font-bold">ENOTECA OS</span>
-            </button>
-            <button
-              onClick={() => setView('landing')}
-              className="rounded-lg p-2 hover:bg-white/5 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <div className="border-b border-[rgba(255,255,255,0.06)]">
+          <div className="max-w-4xl mx-auto px-6 py-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Wine className="w-8 h-8 text-[#C9843A]" strokeWidth={1.5} />
+              <h1 className="text-[24px] font-bold text-[#EEECE7]">ENOTECA OS</h1>
+            </div>
+            <p className="text-[14px] text-[#A09E96]">Valutazione gratuita</p>
           </div>
-        </header>
+        </div>
 
-        <div className="mx-auto max-w-2xl px-6 py-12">
-          <h1 className="text-3xl font-bold mb-2">Vendi le tue bottiglie</h1>
-          <p className="text-[#EEECE7]/60 mb-10">
-            Carica le foto e ricevi una valutazione entro 24 ore.
-          </p>
+        <div className="max-w-4xl mx-auto px-6 py-12">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-[28px] font-bold text-[#EEECE7] mb-2 text-center">
+              Richiedi valutazione
+            </h2>
+            <p className="text-[16px] text-[#A09E96] mb-8 text-center">
+              Compila il form e ricevi un&apos;offerta entro 24 ore
+            </p>
 
-          {/* Photo Upload */}
-          <div className="mb-8">
-            <label className="mb-3 block text-sm font-medium text-[#EEECE7]/80">
-              Foto delle bottiglie
-            </label>
-            <div className="flex items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-[#0D0D15] p-12 hover:border-[#C9843A]/50 transition-colors cursor-pointer">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#C9843A]/10">
-                  <Upload className="h-7 w-7 text-[#C9843A]" />
+            <div className="space-y-6">
+              {/* Upload Area */}
+              <div>
+                <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                  Foto delle bottiglie *
+                </label>
+                <div className="w-full min-h-[200px] bg-[#0D0D15] border-2 border-dashed border-[rgba(255,255,255,0.12)] rounded-xl flex flex-col items-center justify-center gap-3 p-8 hover:border-[#C9843A]/50 transition-colors cursor-pointer">
+                  <Upload className="w-12 h-12 text-[#6B6963]" strokeWidth={1.5} />
+                  <div className="text-center">
+                    <p className="text-[16px] text-[#EEECE7] mb-1">
+                      Trascina le immagini qui
+                    </p>
+                    <p className="text-[14px] text-[#6B6963]">
+                      oppure clicca per sfogliare
+                    </p>
+                  </div>
+                  <button className="px-6 h-10 bg-[#C9843A] hover:bg-[#D4A05A] text-[#07070D] rounded-lg font-medium text-[14px] transition-all">
+                    Scatta foto
+                  </button>
                 </div>
-                <p className="text-sm font-medium">Trascina le foto qui oppure clicca per caricare</p>
-                <p className="text-xs text-[#EEECE7]/40">JPG, PNG fino a 10MB ciascuna</p>
               </div>
-            </div>
-          </div>
 
-          {/* Province */}
-          <div className="mb-8">
-            <label className="mb-3 block text-sm font-medium text-[#EEECE7]/80">
-              <MapPin className="mr-1 inline h-4 w-4" />
-              Provincia
-            </label>
-            <select
-              value={province}
-              onChange={(e) => setProvince(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#0D0D15] px-4 py-3 text-[#EEECE7] outline-none focus:border-[#C9843A] transition-colors"
-            >
-              <option value="">Seleziona provincia</option>
-              {provinces.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sale Type */}
-          <div className="mb-8">
-            <label className="mb-3 block text-sm font-medium text-[#EEECE7]/80">
-              Tipo di vendita
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { key: 'immediate' as const, label: 'Vendita immediata', desc: 'Pagamento in 48h' },
-                { key: 'auction' as const, label: 'Asta', desc: 'Miglior prezzo' },
-                { key: 'consignment' as const, label: 'Conto vendita', desc: 'Nessun rischio' },
-              ].map((type) => (
-                <button
-                  key={type.key}
-                  onClick={() => setSaleType(type.key)}
-                  className={`rounded-lg border p-4 text-left transition-all ${
-                    saleType === type.key
-                      ? 'border-[#C9843A] bg-[#C9843A]/10'
-                      : 'border-white/10 bg-[#0D0D15] hover:border-white/20'
-                  }`}
+              {/* Province */}
+              <div>
+                <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                  Provincia *
+                </label>
+                <select
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  className="w-full h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 text-[16px] text-[#EEECE7] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
                 >
-                  <p className="text-sm font-medium">{type.label}</p>
-                  <p className="mt-1 text-xs text-[#EEECE7]/50">{type.desc}</p>
-                </button>
-              ))}
+                  <option value="">Seleziona provincia</option>
+                  {provinces.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sale Type */}
+              <div>
+                <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                  Tipo di vendita *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Eredit\u00E0', 'Cantina privata', 'Ristorante/bar', 'Altro'].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setSaleType(type)}
+                      className={`h-12 bg-[#0D0D15] hover:bg-[#14141F] border text-[#EEECE7] rounded-xl font-medium text-[14px] transition-all ${
+                        saleType === type
+                          ? 'border-[#C9843A] bg-[#C9843A]/10'
+                          : 'border-[rgba(255,255,255,0.06)] hover:border-[#C9843A]/50'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Il tuo nome"
+                    className="w-full h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 text-[16px] text-[#EEECE7] placeholder:text-[#6B6963] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                    Telefono *
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+39 123 456 7890"
+                    className="w-full h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 text-[16px] text-[#EEECE7] placeholder:text-[#6B6963] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[14px] font-medium text-[#A09E96] mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  placeholder="tua@email.com"
+                  className="w-full h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl px-4 text-[16px] text-[#EEECE7] placeholder:text-[#6B6963] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
+                />
+              </div>
+
+              {/* Submit */}
+              <button className="w-full h-14 bg-[#C9843A] hover:bg-[#D4A05A] text-[#07070D] rounded-xl font-medium text-[16px] transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+                Richiedi valutazione gratuita
+              </button>
+
+              <p className="text-center text-[12px] text-[#6B6963]">
+                Riceverai un&apos;offerta entro 24 ore via WhatsApp o email
+              </p>
             </div>
           </div>
-
-          {/* Contact Form */}
-          <div className="mb-8 space-y-4">
-            <label className="mb-1 block text-sm font-medium text-[#EEECE7]/80">
-              I tuoi contatti
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EEECE7]/40" />
-              <input
-                type="text"
-                placeholder="Nome e cognome"
-                className="w-full rounded-lg border border-white/10 bg-[#0D0D15] py-3 pl-10 pr-4 text-[#EEECE7] outline-none placeholder:text-[#EEECE7]/30 focus:border-[#C9843A] transition-colors"
-              />
-            </div>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EEECE7]/40" />
-              <input
-                type="email"
-                placeholder="Email"
-                className="w-full rounded-lg border border-white/10 bg-[#0D0D15] py-3 pl-10 pr-4 text-[#EEECE7] outline-none placeholder:text-[#EEECE7]/30 focus:border-[#C9843A] transition-colors"
-              />
-            </div>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EEECE7]/40" />
-              <input
-                type="tel"
-                placeholder="Telefono (opzionale)"
-                className="w-full rounded-lg border border-white/10 bg-[#0D0D15] py-3 pl-10 pr-4 text-[#EEECE7] outline-none placeholder:text-[#EEECE7]/30 focus:border-[#C9843A] transition-colors"
-              />
-            </div>
-            <textarea
-              placeholder="Note aggiuntive (opzionale)"
-              rows={3}
-              className="w-full rounded-lg border border-white/10 bg-[#0D0D15] px-4 py-3 text-[#EEECE7] outline-none placeholder:text-[#EEECE7]/30 focus:border-[#C9843A] transition-colors resize-none"
-            />
-          </div>
-
-          {/* Submit */}
-          <button className="w-full rounded-lg bg-[#C9843A] py-4 text-base font-semibold text-white transition-all hover:brightness-110 shadow-lg shadow-[#C9843A]/20">
-            Invia richiesta di valutazione
-          </button>
-          <p className="mt-4 text-center text-xs text-[#EEECE7]/40">
-            Riceverai una risposta entro 24 ore lavorative.
-          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col bg-[#07070D] text-[#EEECE7]">
-      {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center px-6 py-32 md:py-44 overflow-hidden">
-        {/* Dark background placeholder for hero image */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1a1020] via-[#0D0D15] to-[#07070D]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07070D] via-transparent to-transparent" />
+    <div className="min-h-screen bg-[#07070D]">
+      {/* Hero */}
+      <div className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1765850257843-aa029ab7769c?w=1600"
+            alt="Wine cellar"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#07070D]/80 via-[#07070D]/60 to-[#07070D]" />
+        </div>
 
-        <div className="relative z-10 flex flex-col items-center gap-8 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#C9843A]/20 bg-[#C9843A]/5 px-4 py-1.5">
-            <Wine className="h-3.5 w-3.5 text-[#C9843A]" />
-            <span className="text-xs text-[#EEECE7]/70">
-              Piattaforma #1 in Italia per bottiglie da collezione
-            </span>
+        <div className="relative z-10 max-w-4xl mx-auto px-6 py-20 text-center">
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <Wine className="w-12 h-12 text-[#C9843A]" strokeWidth={1.5} />
+            <h1 className="text-[32px] md:text-[48px] font-extrabold text-[#EEECE7]">
+              ENOTECA OS
+            </h1>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]">
-            Scopri quanto valgono{' '}
-            <span className="text-[#C9843A]">le tue bottiglie</span>
-          </h1>
+          <h2 className="text-[32px] md:text-[48px] font-extrabold text-[#EEECE7] mb-4 leading-tight">
+            Scopri quanto valgono<br />le tue bottiglie
+          </h2>
 
-          <p className="text-lg text-[#EEECE7]/60 max-w-xl">
-            Valutazione gratuita in 24 ore. Vini pregiati, whisky rari, cognac e rum da collezione.
-            Tecnologia AI e 20 anni di esperienza al tuo servizio.
+          <p className="text-[18px] text-[#A09E96] mb-8 max-w-2xl mx-auto">
+            Valutazione AI gratuita in 90 secondi. Offerta immediata e ritiro a domicilio.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => setView('upload')}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-[#C9843A] px-8 text-base font-semibold text-white transition-all hover:brightness-110 shadow-lg shadow-[#C9843A]/20"
+              className="w-full sm:w-auto px-8 h-14 bg-[#C9843A] hover:bg-[#D4A05A] text-[#07070D] rounded-xl font-medium text-[16px] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              <Upload className="h-4 w-4" />
-              Valuta le tue bottiglie
+              <Sparkles className="w-5 h-5" strokeWidth={1.5} />
+              Valutazione gratuita
             </button>
             <a
-              href="#come-funziona"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-white/10 px-8 text-base font-medium text-[#EEECE7]/80 hover:text-[#EEECE7] hover:border-white/20 transition-all"
+              href="tel:8006660406"
+              className="w-full sm:w-auto px-8 h-14 bg-[#0D0D15] hover:bg-[#14141F] border border-[rgba(255,255,255,0.06)] text-[#EEECE7] rounded-xl font-medium text-[16px] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              Come funziona
+              <Phone className="w-5 h-5" strokeWidth={1.5} />
+              Chiama 800 66 0406
             </a>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Come funziona */}
-      <section id="come-funziona" className="py-24 md:py-32 px-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-16">
-            <span className="text-xs uppercase text-[#C9843A] tracking-widest font-semibold">
-              Come funziona
-            </span>
-            <h2 className="mt-4 text-3xl md:text-4xl font-bold">
-              Tre semplici passaggi
-            </h2>
-            <p className="mt-4 text-lg text-[#EEECE7]/60 max-w-lg mx-auto">
-              Dal tuo cellulare al pagamento. Semplice, veloce e trasparente.
-            </p>
-          </div>
+      {/* How it works */}
+      <div className="max-w-6xl mx-auto px-6 py-20">
+        <h3 className="text-[28px] font-bold text-[#EEECE7] mb-12 text-center">
+          Come funziona
+        </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {steps.map((step, i) => (
-              <div
-                key={step.title}
-                className="group relative flex flex-col items-center gap-5 rounded-xl border border-white/5 bg-[#0D0D15] p-8 text-center transition-all hover:border-[#C9843A]/20 hover:-translate-y-1"
-              >
-                <div className="absolute -top-4 left-6 flex h-8 w-8 items-center justify-center rounded-full bg-[#C9843A] text-xs font-bold text-white">
-                  {i + 1}
-                </div>
-                <div className="text-4xl mb-2">{step.emoji}</div>
-                <h3 className="text-xl font-semibold">{step.title}</h3>
-                <p className="text-sm text-[#EEECE7]/60 leading-relaxed">
-                  {step.description}
-                </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {steps.map((step) => (
+            <div key={step.number} className="text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-[#C9843A]/10 rounded-2xl border border-[#C9843A]/20 flex items-center justify-center">
+                <span className="text-[40px]">{step.icon}</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-24 px-6 bg-[#0D0D15]/50">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-16">
-            <span className="text-xs uppercase text-[#C9843A] tracking-widest font-semibold">
-              Testimonianze
-            </span>
-            <h2 className="mt-4 text-3xl md:text-4xl font-bold">
-              Cosa dicono i nostri clienti
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((t) => (
-              <div
-                key={t.name}
-                className="rounded-xl border border-white/5 bg-[#0D0D15] p-8 transition-all hover:border-[#C9843A]/20"
-              >
-                <div className="mb-4 flex gap-1">
-                  {Array.from({ length: t.rating }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-[#C9843A] text-[#C9843A]" />
-                  ))}
-                </div>
-                <p className="text-sm text-[#EEECE7]/70 leading-relaxed mb-6">
-                  &ldquo;{t.text}&rdquo;
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C9843A]/10 text-sm font-bold text-[#C9843A]">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{t.name}</p>
-                    <p className="text-xs text-[#EEECE7]/40">{t.location}</p>
-                  </div>
-                </div>
+              <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#C9843A] text-[#07070D] font-bold text-[14px] mb-3">
+                {step.number}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Blog Preview */}
-      <section className="py-24 px-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-12 flex items-end justify-between">
-            <div>
-              <span className="text-xs uppercase text-[#C9843A] tracking-widest font-semibold">
-                Dal nostro blog
-              </span>
-              <h2 className="mt-4 text-3xl font-bold">
-                Ultime dal mondo del vino
-              </h2>
-            </div>
-            <Link
-              href="#"
-              className="hidden md:inline-flex items-center gap-1 text-sm text-[#C9843A] hover:underline"
-            >
-              Vedi tutti gli articoli
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {blogPosts.map((post) => (
-              <article
-                key={post.title}
-                className="group rounded-xl border border-white/5 bg-[#0D0D15] overflow-hidden transition-all hover:border-[#C9843A]/20 hover:-translate-y-1"
-              >
-                <div className="h-48 bg-gradient-to-br from-[#1a1020] to-[#0D0D15]" />
-                <div className="p-6">
-                  <div className="mb-3 flex items-center gap-3 text-xs text-[#EEECE7]/40">
-                    <span>{post.date}</span>
-                    <span className="h-1 w-1 rounded-full bg-[#EEECE7]/20" />
-                    <span>{post.readTime} lettura</span>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 group-hover:text-[#C9843A] transition-colors">
-                    {post.title}
-                  </h3>
-                  <p className="text-sm text-[#EEECE7]/50 leading-relaxed">
-                    {post.excerpt}
-                  </p>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-8 text-center md:hidden">
-            <Link
-              href="#"
-              className="inline-flex items-center gap-1 text-sm text-[#C9843A] hover:underline"
-            >
-              Vedi tutti gli articoli
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-24 px-6">
-        <div className="mx-auto max-w-2xl text-center">
-          <Sparkles className="mx-auto mb-6 h-10 w-10 text-[#C9843A]" />
-          <h2 className="text-3xl md:text-4xl font-bold">
-            Pronto a scoprire il valore della tua collezione?
-          </h2>
-          <p className="mt-4 text-lg text-[#EEECE7]/60">
-            Valutazione gratuita, senza impegno. Rispondiamo entro 24 ore.
-          </p>
-          <button
-            onClick={() => setView('upload')}
-            className="mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-[#C9843A] px-8 text-base font-semibold text-white transition-all hover:brightness-110 shadow-lg shadow-[#C9843A]/20"
-          >
-            Inizia la valutazione
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/5 bg-[#0D0D15] px-6 py-16">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-            {/* Brand */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <Wine className="h-6 w-6 text-[#C9843A]" />
-                <span className="text-lg font-bold">ENOTECA OS</span>
-              </div>
-              <p className="text-sm text-[#EEECE7]/40 leading-relaxed">
-                La piattaforma intelligente per la compravendita di bottiglie rare e da collezione.
+              <h4 className="text-[20px] font-semibold text-[#EEECE7] mb-2">
+                {step.title}
+              </h4>
+              <p className="text-[14px] text-[#A09E96]">
+                {step.description}
               </p>
             </div>
+          ))}
+        </div>
+      </div>
 
-            {/* Links */}
-            <div>
-              <h4 className="mb-4 text-sm font-semibold text-[#EEECE7]/80">Servizi</h4>
-              <ul className="space-y-3 text-sm text-[#EEECE7]/40">
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Valutazione</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Vendita</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Acquisto</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Consulenza</Link></li>
-              </ul>
-            </div>
+      {/* Testimonials */}
+      <div className="bg-[#0D0D15] border-y border-[rgba(255,255,255,0.06)]">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <h3 className="text-[28px] font-bold text-[#EEECE7] mb-12 text-center">
+            Cosa dicono i nostri clienti
+          </h3>
 
-            <div>
-              <h4 className="mb-4 text-sm font-semibold text-[#EEECE7]/80">Risorse</h4>
-              <ul className="space-y-3 text-sm text-[#EEECE7]/40">
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Blog</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Guida ai prezzi</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">FAQ</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Contatti</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="mb-4 text-sm font-semibold text-[#EEECE7]/80">Legale</h4>
-              <ul className="space-y-3 text-sm text-[#EEECE7]/40">
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Privacy Policy</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Termini di Servizio</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">Cookie Policy</Link></li>
-                <li><Link href="#" className="hover:text-[#EEECE7] transition-colors">P.IVA</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-white/5 pt-8">
-            <p className="text-xs text-[#EEECE7]/30">
-              &copy; 2026 ENOTECA OS. Tutti i diritti riservati.
-            </p>
-            <p className="text-xs text-[#EEECE7]/30">
-              Made with <Sparkles className="inline h-3 w-3 text-[#C9843A]" /> in Italy
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((testimonial, i) => (
+              <div
+                key={i}
+                className="bg-[#14141F] rounded-xl p-6 border border-[rgba(255,255,255,0.06)]"
+              >
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(testimonial.rating)].map((_, j) => (
+                    <Star key={j} className="w-4 h-4 text-[#C9843A] fill-[#C9843A]" strokeWidth={0} />
+                  ))}
+                </div>
+                <p className="text-[14px] text-[#EEECE7] mb-4 leading-relaxed">
+                  &ldquo;{testimonial.text}&rdquo;
+                </p>
+                <div>
+                  <p className="text-[14px] font-semibold text-[#EEECE7]">
+                    {testimonial.name}
+                  </p>
+                  <p className="text-[12px] text-[#6B6963]">
+                    {testimonial.location}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </footer>
+      </div>
+
+      {/* Blog Section */}
+      <div className="max-w-6xl mx-auto px-6 py-20">
+        <h3 className="text-[28px] font-bold text-[#EEECE7] mb-12 text-center">
+          Dal nostro blog
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {articles.map((article, i) => (
+            <div
+              key={i}
+              className="bg-[#0D0D15] rounded-xl overflow-hidden border border-[rgba(255,255,255,0.06)] hover:border-[#C9843A]/30 transition-all cursor-pointer"
+            >
+              <div className="aspect-[16/10] overflow-hidden">
+                <img
+                  src={article.image}
+                  alt={article.title}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <div className="p-5">
+                <span className="inline-block px-3 py-1 rounded-full text-[11px] font-medium bg-[#C9843A]/10 text-[#C9843A] border border-[#C9843A]/20 mb-3">
+                  {article.category}
+                </span>
+                <h4 className="text-[16px] font-semibold text-[#EEECE7] leading-snug">
+                  {article.title}
+                </h4>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-[rgba(255,255,255,0.06)]">
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Wine className="w-6 h-6 text-[#C9843A]" strokeWidth={1.5} />
+                <span className="text-[18px] font-bold text-[#EEECE7]">ENOTECA OS</span>
+              </div>
+              <p className="text-[13px] text-[#6B6963]">
+                Sistema operativo autonomo per commercianti di vini e spirits da collezione
+              </p>
+            </div>
+            <div>
+              <h4 className="text-[14px] font-semibold text-[#EEECE7] mb-3">Servizi</h4>
+              <ul className="space-y-2 text-[13px] text-[#6B6963]">
+                <li><Link href="#" className="hover:text-[#C9843A]">Valutazione</Link></li>
+                <li><Link href="#" className="hover:text-[#C9843A]">Acquisto</Link></li>
+                <li><Link href="#" className="hover:text-[#C9843A]">Vendita</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-[14px] font-semibold text-[#EEECE7] mb-3">Legale</h4>
+              <ul className="space-y-2 text-[13px] text-[#6B6963]">
+                <li><Link href="#" className="hover:text-[#C9843A]">Privacy Policy</Link></li>
+                <li><Link href="#" className="hover:text-[#C9843A]">Cookie Policy</Link></li>
+                <li><Link href="#" className="hover:text-[#C9843A]">Termini di servizio</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-[14px] font-semibold text-[#EEECE7] mb-3">Contatti</h4>
+              <ul className="space-y-2 text-[13px] text-[#6B6963]">
+                <li>800 66 0406</li>
+                <li>info@enotecaos.com</li>
+              </ul>
+            </div>
+          </div>
+          <div className="pt-8 border-t border-[rgba(255,255,255,0.06)] text-center text-[12px] text-[#6B6963]">
+            &copy; 2026 ENOTECA OS. Tutti i diritti riservati.
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

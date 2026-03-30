@@ -2,26 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Wine,
-  DollarSign,
-  Clock,
-  Package,
   Bell,
   Trophy,
   AlertCircle,
   AlertTriangle,
+  TrendingUp,
   TrendingDown,
   Bot,
   CheckCircle,
+  Clock,
   Plus,
-  Sparkles,
-  Send,
-  BarChart3,
-  ChevronRight,
   Loader2,
 } from 'lucide-react';
-import { KpiCard } from '@/components/dashboard/kpi-card';
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { DEMO_ORG_ID } from '@/lib/hooks/use-org';
 
 /* ── Types ── */
@@ -77,12 +71,43 @@ const priorityAccent: Record<string, string> = {
   low:      '#22C68A',
 };
 
-/* ── Quick action definitions ── */
-const quickActions = [
-  { label: 'Nuova bottiglia', icon: Wine, accent: 'bg-accent-wine/10 text-accent-wine-light' },
-  { label: 'Nuovo deal', icon: Send, accent: 'bg-accent-copper/10 text-accent-copper' },
-  { label: 'Valutazione AI', icon: Sparkles, accent: 'bg-info/10 text-info' },
-  { label: 'Report veloce', icon: BarChart3, accent: 'bg-success/10 text-success' },
+/* ── Placeholder activities (no endpoint yet) ── */
+const activities = [
+  {
+    time: '14:32',
+    agent: 'Pricing',
+    color: '#C9843A',
+    action: 'Updated pricing for Château Margaux 2015',
+    bottle: null,
+  },
+  {
+    time: '13:18',
+    agent: 'Scout',
+    color: '#3B7FD9',
+    action: 'Found undervalued Macallan 18yr on marketplace',
+    bottle: null,
+  },
+  {
+    time: '12:45',
+    agent: 'Valuation',
+    color: '#22C68A',
+    action: 'Completed analysis for Barolo Riserva 1967',
+    bottle: null,
+  },
+  {
+    time: '11:30',
+    agent: 'Outreach',
+    color: '#E5A832',
+    action: 'Contacted 3 new potential sellers via WhatsApp',
+    bottle: null,
+  },
+  {
+    time: '10:15',
+    agent: 'Inventory',
+    color: '#8B1A32',
+    action: 'Added Hennessy Paradis to warehouse 2',
+    bottle: null,
+  },
 ];
 
 /* ── Helpers ── */
@@ -95,36 +120,35 @@ function formatCurrency(value: number): string {
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'adesso';
-  if (mins < 60) return `${mins} min fa`;
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} ${hrs === 1 ? 'ora' : 'ore'} fa`;
+  if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  return `${days} ${days === 1 ? 'giorno' : 'giorni'} fa`;
+  return `${days}d ago`;
 }
 
 /* ── Skeleton loaders ── */
 function KpiSkeleton() {
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-border-subtle bg-bg-secondary p-5 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="h-3 w-20 rounded bg-bg-tertiary" />
-        <div className="h-8 w-8 rounded-md bg-bg-tertiary" />
-      </div>
-      <div className="h-8 w-24 rounded bg-bg-tertiary" />
+    <div className="bg-[#0D0D15] rounded-xl p-4 border border-[rgba(255,255,255,0.06)] animate-pulse">
+      <div className="h-3 w-20 rounded bg-[#14141F] mb-3" />
+      <div className="h-7 w-16 rounded bg-[#14141F]" />
     </div>
   );
 }
 
 function AlertSkeleton() {
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-secondary p-4 animate-pulse" style={{ borderLeftWidth: 3, borderLeftColor: 'var(--border-subtle)' }}>
-      <div className="flex gap-3">
-        <div className="h-9 w-9 rounded-lg bg-bg-tertiary shrink-0" />
-        <div className="flex flex-1 flex-col gap-2">
-          <div className="h-4 w-3/4 rounded bg-bg-tertiary" />
-          <div className="h-3 w-full rounded bg-bg-tertiary" />
-          <div className="h-3 w-1/2 rounded bg-bg-tertiary" />
+    <div
+      className="bg-[#14141F] rounded-xl p-4 border border-[rgba(255,255,255,0.06)] w-[248px] flex-shrink-0 animate-pulse"
+      style={{ borderLeftWidth: 3, borderLeftColor: 'rgba(255,255,255,0.06)' }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-lg bg-[#0D0D15] flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-3/4 rounded bg-[#0D0D15]" />
+          <div className="h-3 w-full rounded bg-[#0D0D15]" />
         </div>
       </div>
     </div>
@@ -132,7 +156,8 @@ function AlertSkeleton() {
 }
 
 export default function DashboardPage() {
-  const [fabOpen, setFabOpen] = useState(false);
+  const router = useRouter();
+  const [showFAB, setShowFAB] = useState(false);
 
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -203,23 +228,25 @@ export default function DashboardPage() {
     .filter((b) => inventoryStatuses.has(b.status))
     .reduce((sum, b) => sum + (b.target_sell_price ?? b.market_price_high ?? 0), 0);
 
+  const unreadAlertCount = alerts.filter((a) => !a.is_read).length;
+
   const kpis = [
-    { label: 'Bottiglie oggi', value: String(bottleCount), icon: Wine },
-    { label: 'Revenue MTD', value: formatCurrency(revenueMtd), icon: DollarSign },
-    { label: 'Deal in attesa', value: String(dealsInAttesa), icon: Clock },
-    { label: 'Valore inventario', value: formatCurrency(inventoryValue), icon: Package },
+    { label: 'Bottles today', value: String(bottleCount), delta: null as string | null, positive: true, warning: false },
+    { label: 'Revenue MTD', value: formatCurrency(revenueMtd), delta: null, positive: true, warning: false },
+    { label: 'Pending deals', value: String(dealsInAttesa), delta: null, positive: false, warning: dealsInAttesa > 0 },
+    { label: 'Inventory value', value: formatCurrency(inventoryValue), delta: null, positive: true, warning: false },
   ];
 
   /* ── Error state ── */
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-20 animate-fade-in">
-        <AlertCircle className="h-12 w-12 text-semantic-danger" />
-        <h2 className="text-title-3 text-text-primary">Errore</h2>
-        <p className="text-body-sm text-text-secondary max-w-md text-center">{error}</p>
+      <div className="min-h-screen bg-[#07070D] flex flex-col items-center justify-center gap-4 px-4">
+        <AlertCircle className="h-12 w-12 text-[#DC4545]" />
+        <h2 className="text-[18px] font-semibold text-[#EEECE7]">Errore</h2>
+        <p className="text-[14px] text-[#A09E96] max-w-md text-center">{error}</p>
         <button
           onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
-          className="text-body-sm font-medium text-accent-copper hover:text-accent-gold transition-colors"
+          className="text-[14px] font-medium text-[#C9843A] hover:text-[#D4A05A] transition-colors"
         >
           Riprova
         </button>
@@ -228,193 +255,196 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 animate-fade-in">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-title-1 text-text-primary">Dashboard</h1>
-          <p className="text-body-sm text-text-secondary mt-1">
-            Buongiorno, Marco. Ecco il riepilogo di oggi.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-full border border-success/20 bg-success/5 px-3 py-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-            </span>
-            <span className="text-caption font-medium text-success">Sistema operativo</span>
-          </div>
-          <span className="text-caption text-text-tertiary">
-            Ultimo aggiornamento: 2 min fa
-          </span>
-        </div>
-      </div>
-
-      {/* ── KPI Grid (4 columns) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading
-          ? Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
-          : kpis.map((kpi) => <KpiCard key={kpi.label} {...kpi} />)
-        }
-      </div>
-
-      {/* ── Main content: Alerts (2/3) + Activity Feed (1/3) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Alerts column */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-title-3 text-text-primary flex items-center gap-2">
-              <Bell className="h-5 w-5 text-accent-copper" />
-              Avvisi
-              {!loading && alerts.length > 0 && (
-                <span className="text-caption font-medium text-text-tertiary">({alerts.length})</span>
-              )}
-            </h2>
-            <button className="text-caption text-accent-copper hover:text-accent-gold transition-colors flex items-center gap-1">
-              Vedi tutti <ChevronRight className="h-3 w-3" />
-            </button>
-          </div>
-
-          {/* Horizontal-scrollable alert cards on smaller screens, stacked on lg */}
-          <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 snap-x snap-mandatory lg:snap-none">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, i) => <AlertSkeleton key={i} />)
-            ) : alerts.length === 0 ? (
-              <div className="rounded-lg border border-border-subtle bg-bg-secondary p-6 text-center">
-                <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
-                <p className="text-body-sm text-text-secondary">Nessun avviso</p>
-              </div>
-            ) : (
-              alerts.map((alert) => {
-                const config = alertTypeConfig[alert.alert_type];
-                const Icon = config?.icon ?? AlertCircle;
-                const accent = config?.accent ?? priorityAccent[alert.priority] ?? '#3B7FD9';
-
-                return (
-                  <div
-                    key={alert.id}
-                    className="min-w-[320px] lg:min-w-0 snap-start rounded-lg border border-border-subtle bg-bg-secondary p-4 transition-all duration-200 hover:border-border-medium hover:bg-bg-tertiary group"
-                    style={{ borderLeftWidth: 3, borderLeftColor: accent }}
-                  >
-                    <div className="flex gap-3">
-                      <div
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                        style={{ backgroundColor: `${accent}15` }}
-                      >
-                        <Icon className="h-4.5 w-4.5" style={{ color: accent }} />
-                      </div>
-                      <div className="flex flex-1 flex-col gap-1.5 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-body-sm font-medium text-text-primary leading-snug">
-                            {alert.title}
-                          </h4>
-                          <span className="text-caption text-text-tertiary whitespace-nowrap shrink-0">
-                            {timeAgo(alert.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-caption text-text-secondary leading-relaxed">
-                          {alert.message}
-                        </p>
-                        {alert.action_url && (
-                          <div className="flex gap-2 mt-1">
-                            <button
-                              className="text-caption font-medium px-2.5 py-1 rounded-md transition-colors"
-                              style={{ color: accent, backgroundColor: `${accent}10` }}
-                            >
-                              Vedi dettagli
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Activity Feed column */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-title-3 text-text-primary flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-accent-gold" />
-              Agent Activity
-            </h2>
-            <span className="text-caption text-text-tertiary">Oggi</span>
-          </div>
-          <div className="rounded-lg border border-border-subtle bg-bg-secondary overflow-hidden">
-            <div className="flex flex-col divide-y divide-border-subtle">
-              {loading ? (
-                <div className="flex items-center justify-center gap-2 p-8">
-                  <Loader2 className="h-4 w-4 animate-spin text-text-tertiary" />
-                  <span className="text-body-sm text-text-secondary">Caricamento...</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center p-8">
-                  <span className="text-body-sm text-text-tertiary">Nessuna attività</span>
-                </div>
-              )}
+    <div className="min-h-screen bg-[#07070D] pb-24 overflow-x-hidden">
+      {/* Top Bar */}
+      <div className="sticky top-0 z-40 bg-[#07070D]/80 backdrop-blur-xl border-b border-[rgba(255,255,255,0.06)]">
+        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#C9843A]/10 border border-[#C9843A]/20 flex items-center justify-center">
+              <span className="text-[12px] font-bold text-[#C9843A]">EO</span>
+            </div>
+            <div>
+              <p className="text-[11px] text-[#6B6963]">Good morning</p>
+              <p className="text-[14px] font-semibold text-[#EEECE7]">Emanuele</p>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ── Quick Actions (desktop grid) ── */}
-      <div className="flex flex-col gap-4">
-        <h2 className="text-title-3 text-text-primary">Azioni rapide</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.label}
-                className="group flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-secondary p-4 text-body-sm text-text-secondary hover:text-text-primary hover:border-border-medium hover:bg-bg-tertiary transition-all duration-200 hover-lift"
-              >
-                <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg shrink-0', action.accent)}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span className="font-medium">{action.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── FAB (Floating Action Button) - desktop adaptation ── */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <div className="relative">
-          {/* Expanded menu */}
-          {fabOpen && (
-            <div className="absolute bottom-16 right-0 flex flex-col gap-2 animate-slide-up">
-              {quickActions.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={action.label}
-                    className="flex items-center gap-3 rounded-lg bg-bg-tertiary border border-border-medium px-4 py-3 text-body-sm text-text-primary shadow-lg hover:bg-bg-quaternary transition-all whitespace-nowrap"
-                    onClick={() => setFabOpen(false)}
-                  >
-                    <Icon className="h-4 w-4 text-accent-copper" />
-                    {action.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {/* FAB button */}
-          <button
-            onClick={() => setFabOpen(!fabOpen)}
-            className={cn(
-              'flex h-14 w-14 items-center justify-center rounded-full bg-copper-gradient text-bg-primary shadow-lg shadow-accent-copper/25 transition-all duration-300 hover:shadow-accent-copper/40 hover:scale-105',
-              fabOpen && 'rotate-45'
+          <button className="relative w-10 h-10 rounded-full bg-[#0D0D15] border border-[rgba(255,255,255,0.06)] flex items-center justify-center hover:bg-[#14141F] transition-colors">
+            <Bell className="w-5 h-5 text-[#A09E96]" strokeWidth={1.5} />
+            {unreadAlertCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-[#DC4545] rounded-full border border-[#07070D]" />
             )}
-          >
-            <Plus className="h-6 w-6" />
           </button>
         </div>
       </div>
+
+      <div className="max-w-md mx-auto py-6 space-y-6">
+        {/* KPIs */}
+        <div className="px-4">
+          <div className="grid grid-cols-2 gap-3">
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
+              : kpis.map((kpi, i) => (
+                  <div key={i} className="bg-[#0D0D15] rounded-xl p-4 border border-[rgba(255,255,255,0.06)]">
+                    <p className="text-overline text-[#6B6963] mb-2 whitespace-nowrap">{kpi.label}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className={`text-[24px] font-bold ${kpi.warning ? 'text-[#E5A832]' : 'text-[#EEECE7]'} font-mono truncate`}>
+                        {kpi.value}
+                      </p>
+                      {kpi.delta && (
+                        <span className={`text-[12px] font-medium flex items-center gap-0.5 ${
+                          kpi.positive ? 'text-[#22C68A]' : 'text-[#DC4545]'
+                        }`}>
+                          {kpi.positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                          {kpi.delta}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+
+        {/* Alerts */}
+        <div className="px-4">
+          <h3 className="text-[18px] font-semibold text-[#EEECE7] mb-3">Alerts</h3>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-2 pl-4 pr-4 scrollbar-hide -mt-3">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => <AlertSkeleton key={i} />)
+          ) : alerts.length === 0 ? (
+            <div className="bg-[#14141F] rounded-xl p-6 border border-[rgba(255,255,255,0.06)] w-full text-center">
+              <CheckCircle className="h-8 w-8 text-[#22C68A] mx-auto mb-2" />
+              <p className="text-[13px] text-[#A09E96]">Nessun avviso</p>
+            </div>
+          ) : (
+            alerts.map((alert) => {
+              const config = alertTypeConfig[alert.alert_type];
+              const Icon = config?.icon ?? AlertCircle;
+              const accent = config?.accent ?? priorityAccent[alert.priority] ?? '#3B7FD9';
+
+              return (
+                <div
+                  key={alert.id}
+                  className="bg-[#14141F] rounded-xl p-4 border border-[rgba(255,255,255,0.06)] w-[248px] flex-shrink-0 overflow-hidden"
+                  style={{ borderLeftColor: accent, borderLeftWidth: '3px' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${accent}15` }}
+                    >
+                      <Icon className="w-5 h-5" style={{ color: accent }} strokeWidth={1.5} />
+                    </div>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-[14px] font-semibold text-[#EEECE7] truncate">{alert.title}</h4>
+                        <span className="text-[11px] text-[#6B6963] font-mono flex-shrink-0 ml-2">
+                          {timeAgo(alert.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-[13px] text-[#A09E96] truncate">{alert.message}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Activity Feed */}
+        <div className="px-4">
+          <h3 className="text-[18px] font-semibold text-[#EEECE7] mb-3">Recent Activity</h3>
+          <div className="space-y-3">
+            {loading ? (
+              <div className="flex items-center justify-center gap-2 py-8">
+                <Loader2 className="h-4 w-4 animate-spin text-[#6B6963]" />
+                <span className="text-[13px] text-[#A09E96]">Caricamento...</span>
+              </div>
+            ) : (
+              activities.map((activity, i) => (
+                <div key={i} className="flex items-center gap-2 min-w-0">
+                  <span className="text-[11px] font-mono text-[#6B6963] w-10 flex-shrink-0">
+                    {activity.time}
+                  </span>
+                  <div className="flex-1 min-w-0 bg-[#0D0D15] rounded-xl p-3 border border-[rgba(255,255,255,0.06)] flex items-center gap-2 overflow-hidden">
+                    <div
+                      className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${activity.color}20` }}
+                    >
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: activity.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-medium block" style={{ color: activity.color }}>
+                        {activity.agent}
+                      </span>
+                      <p className="text-[13px] text-[#A09E96] truncate">{activity.action}</p>
+                    </div>
+                    {activity.bottle && (
+                      <img
+                        src={activity.bottle}
+                        alt=""
+                        className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* FAB */}
+      <button
+        onClick={() => setShowFAB(!showFAB)}
+        className="fixed bottom-28 right-4 w-14 h-14 bg-[#C9843A] hover:bg-[#D4A05A] rounded-full shadow-lg flex items-center justify-center transition-all active:scale-95 z-30"
+      >
+        <Plus className={`w-6 h-6 text-[#07070D] transition-transform ${showFAB ? 'rotate-45' : ''}`} strokeWidth={2} />
+      </button>
+
+      {showFAB && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-20"
+            onClick={() => setShowFAB(false)}
+          />
+          <div className="fixed bottom-44 right-4 z-30 space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-[14px] text-[#EEECE7] bg-[#0D0D15] px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.06)]">
+                Scan Bottle
+              </span>
+              <div className="w-12 h-12 bg-[#14141F] hover:bg-[#1C1C2A] rounded-full flex items-center justify-center border border-[rgba(255,255,255,0.06)] transition-all cursor-pointer">
+                <span className="text-[20px]">📸</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[14px] text-[#EEECE7] bg-[#0D0D15] px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.06)]">
+                New Seller
+              </span>
+              <div className="w-12 h-12 bg-[#14141F] hover:bg-[#1C1C2A] rounded-full flex items-center justify-center border border-[rgba(255,255,255,0.06)] transition-all cursor-pointer">
+                <span className="text-[20px]">👤</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[14px] text-[#EEECE7] bg-[#0D0D15] px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.06)]">
+                New Listing
+              </span>
+              <div className="w-12 h-12 bg-[#14141F] hover:bg-[#1C1C2A] rounded-full flex items-center justify-center border border-[rgba(255,255,255,0.06)] transition-all cursor-pointer">
+                <span className="text-[20px]">🏷️</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[14px] text-[#EEECE7] bg-[#0D0D15] px-3 py-2 rounded-lg border border-[rgba(255,255,255,0.06)]">
+                Manual Entry
+              </span>
+              <div className="w-12 h-12 bg-[#14141F] hover:bg-[#1C1C2A] rounded-full flex items-center justify-center border border-[rgba(255,255,255,0.06)] transition-all cursor-pointer">
+                <span className="text-[20px]">✍️</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

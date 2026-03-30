@@ -3,24 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import {
-  Search,
-  LayoutGrid,
-  List,
-  Plus,
-  SlidersHorizontal,
-  Wine,
-  GlassWater,
-  Martini,
-  Flame,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpDown,
-  Filter,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn, formatCurrency } from '@/lib/utils';
+import { Search, SlidersHorizontal, Wine, Grape, Martini } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 import { DEMO_ORG_ID } from '@/lib/hooks/use-org';
 
 /* ── Types ── */
@@ -60,56 +44,49 @@ interface BottlesResponse {
 type FilterId = 'all' | 'wine' | 'whisky' | 'cognac' | 'rum' | 'listed' | 'acquired' | 'pending_valuation';
 
 const filterDefs: { id: FilterId; label: string }[] = [
-  { id: 'all', label: 'Tutte' },
-  { id: 'wine', label: 'Vino' },
+  { id: 'all', label: 'All' },
+  { id: 'wine', label: 'Wine' },
   { id: 'whisky', label: 'Whisky' },
   { id: 'cognac', label: 'Cognac' },
   { id: 'rum', label: 'Rum' },
-  { id: 'listed', label: 'In vendita' },
-  { id: 'acquired', label: 'Acquisite' },
-  { id: 'pending_valuation', label: 'In attesa' },
+  { id: 'listed', label: 'Listed' },
+  { id: 'acquired', label: 'Acquired' },
+  { id: 'pending_valuation', label: 'Pending' },
 ];
 
 const categoryFilters = ['wine', 'whisky', 'cognac', 'rum'] as const;
 const statusFilters = ['listed', 'acquired', 'pending_valuation'] as const;
 
-/* ── Category labels (API value → Italian) ── */
-const categoryLabel: Record<string, string> = {
-  wine: 'Vino',
-  whisky: 'Whisky',
-  cognac: 'Cognac',
-  rum: 'Rum',
-  liqueur: 'Liquore',
-  champagne: 'Champagne',
-  other: 'Altro',
-};
-
-/* ── Category icon map ── */
-const categoryIcon: Record<string, typeof Wine> = {
-  wine: Wine,
-  whisky: GlassWater,
-  cognac: Martini,
-  rum: Flame,
-};
-
-/* ── Status badge config (API status value → display) ── */
-const statusConfig: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  pending_valuation: { label: 'In attesa', bg: 'bg-warning/10', text: 'text-warning', dot: 'bg-warning' },
-  valued: { label: 'Valutata', bg: 'bg-accent-copper/10', text: 'text-accent-copper', dot: 'bg-accent-copper' },
-  acquired: { label: 'Acquisita', bg: 'bg-success/10', text: 'text-success', dot: 'bg-success' },
-  in_inventory: { label: 'In magazzino', bg: 'bg-success/10', text: 'text-success', dot: 'bg-success' },
-  listed: { label: 'In vendita', bg: 'bg-accent-copper/10', text: 'text-accent-copper', dot: 'bg-accent-copper' },
-  reserved: { label: 'Riservata', bg: 'bg-warning/10', text: 'text-warning', dot: 'bg-warning' },
-  sold: { label: 'Venduta', bg: 'bg-text-tertiary/10', text: 'text-text-tertiary', dot: 'bg-text-tertiary' },
-  rejected: { label: 'Rifiutata', bg: 'bg-danger/10', text: 'text-danger', dot: 'bg-danger' },
+/* ── Status badge config ── */
+const statusConfig: Record<string, { label: string; color: string }> = {
+  pending_valuation: { label: 'Pending', color: '#E5A832' },
+  valued: { label: 'Valued', color: '#C9843A' },
+  acquired: { label: 'Acquired', color: '#3B7FD9' },
+  in_inventory: { label: 'In Stock', color: '#22C68A' },
+  listed: { label: 'Listed', color: '#22C68A' },
+  reserved: { label: 'Reserved', color: '#E5A832' },
+  sold: { label: 'Sold', color: '#6B6963' },
+  rejected: { label: 'Rejected', color: '#E54B4B' },
 };
 
 /* ── Sort field mapping ── */
 const sortFieldMap: Record<string, string> = {
-  price: 'target_sell_price',
+  price_high: 'target_sell_price',
+  price_low: 'target_sell_price',
   name: 'name',
   margin: 'purchase_price',
+  date: 'created_at',
 };
+
+const sortOptions = [
+  { id: 'date', label: 'Date added' },
+  { id: 'price_high', label: 'Price: High \u2192 Low' },
+  { id: 'price_low', label: 'Price: Low \u2192 High' },
+  { id: 'name', label: 'Name' },
+  { id: 'margin', label: 'Margin' },
+] as const;
+
+type SortId = (typeof sortOptions)[number]['id'];
 
 /* ── Helpers ── */
 function computeMargin(bottle: Bottle): number | null {
@@ -123,11 +100,20 @@ function displayPrice(bottle: Bottle): number {
   return bottle.target_sell_price ?? bottle.purchase_price ?? 0;
 }
 
+function getCategoryIcon(category: string) {
+  switch (category) {
+    case 'wine': return <Wine className="w-4 h-4" strokeWidth={1.5} />;
+    case 'whisky': return <Martini className="w-4 h-4" strokeWidth={1.5} />;
+    case 'cognac': return <Grape className="w-4 h-4" strokeWidth={1.5} />;
+    default: return <Wine className="w-4 h-4" strokeWidth={1.5} />;
+  }
+}
+
 export default function BottlesPage() {
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'price' | 'name' | 'margin'>('price');
+  const [sortBy, setSortBy] = useState<SortId>('date');
+  const [showSort, setShowSort] = useState(false);
 
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -143,8 +129,8 @@ export default function BottlesPage() {
       params.set('org_id', DEMO_ORG_ID);
       params.set('limit', '50');
       params.set('offset', '0');
-      params.set('sort', sortFieldMap[sortBy] || 'target_sell_price');
-      params.set('order', sortBy === 'name' ? 'asc' : 'desc');
+      params.set('sort', sortFieldMap[sortBy] || 'created_at');
+      params.set('order', sortBy === 'name' || sortBy === 'price_low' ? 'asc' : 'desc');
 
       if (search) params.set('search', search);
 
@@ -181,7 +167,7 @@ export default function BottlesPage() {
 
       /* Fetch all count */
       const allRes = await fetch(`/api/bottles?${baseParams.toString()}`);
-      const allJson: BottlesResponse = allRes.ok ? await allRes.json() : { count: 0 };
+      const allJson: BottlesResponse = allRes.ok ? await allRes.json() : { count: 0, data: [], limit: 0, offset: 0 };
 
       /* Fetch category and status counts in parallel */
       const countPromises = [...categoryFilters, ...statusFilters].map(async (filterId) => {
@@ -192,7 +178,7 @@ export default function BottlesPage() {
           p.set('status', filterId);
         }
         const r = await fetch(`/api/bottles?${p.toString()}`);
-        const j: BottlesResponse = r.ok ? await r.json() : { count: 0 };
+        const j: BottlesResponse = r.ok ? await r.json() : { count: 0, data: [], limit: 0, offset: 0 };
         return [filterId, j.count] as [string, number];
       });
 
@@ -213,353 +199,217 @@ export default function BottlesPage() {
     fetchFilterCounts();
   }, [fetchFilterCounts]);
 
-  /* ── Computed totals ── */
-  const totalValue = bottles.reduce((sum, b) => sum + displayPrice(b), 0);
-
   return (
-    <div className="flex flex-col gap-6 animate-fade-in">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-title-1 text-text-primary">Bottiglie</h1>
-          <p className="text-body-sm text-text-secondary mt-1">
-            {totalCount} bottigli{totalCount === 1 ? 'a' : 'e'} in inventario &middot; valore totale{' '}
-            <span className="text-accent-copper font-medium">
-              {formatCurrency(totalValue)}
-            </span>
-          </p>
-        </div>
-        <Button className="bg-copper-gradient text-bg-primary hover:opacity-90 transition-opacity">
-          <Plus className="h-4 w-4" />
-          Aggiungi bottiglia
-        </Button>
-      </div>
+    <div className="min-h-screen bg-[#07070D] pb-24">
+      {/* ── Sticky Header ── */}
+      <div className="sticky top-0 z-40 bg-[#07070D]/80 backdrop-blur-xl border-b border-[rgba(255,255,255,0.06)]">
+        <div className="max-w-md mx-auto px-4 py-6">
+          <h1 className="text-[28px] font-bold text-[#EEECE7] mb-4">Inventory</h1>
 
-      {/* ── Search & Controls ── */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          {/* Search input */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
+          {/* Search Bar */}
+          <div className="relative mb-4">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B6963]" strokeWidth={1.5} />
             <input
               type="text"
-              placeholder="Cerca per nome, produttore o regione..."
+              placeholder="Search bottles..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex h-10 w-full rounded-lg border border-border-medium bg-bg-tertiary pl-10 pr-4 text-body-sm text-text-primary placeholder:text-text-disabled focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-copper/40 focus-visible:border-accent-copper/30 transition-all"
+              className="w-full h-12 bg-[#1C1C2A] border border-[rgba(255,255,255,0.06)] rounded-xl pl-12 pr-4 text-[16px] text-[#EEECE7] placeholder:text-[#6B6963] focus:outline-none focus:border-[#C9843A]/50 focus:ring-2 focus:ring-[#C9843A]/20"
             />
           </div>
 
-          {/* Sort dropdown */}
-          <div className="relative">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'price' | 'name' | 'margin')}
-              className="h-10 appearance-none rounded-lg border border-border-medium bg-bg-tertiary pl-3 pr-8 text-caption text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-copper/40 cursor-pointer"
-            >
-              <option value="price">Prezzo</option>
-              <option value="name">Nome</option>
-              <option value="margin">Margine</option>
-            </select>
-            <ArrowUpDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-tertiary pointer-events-none" />
-          </div>
-
-          {/* View mode toggle */}
-          <div className="flex items-center rounded-lg border border-border-medium overflow-hidden">
-            <button
-              onClick={() => setViewMode('list')}
-              className={cn(
-                'flex h-10 w-10 items-center justify-center transition-colors',
-                viewMode === 'list'
-                  ? 'bg-accent-copper/10 text-accent-copper'
-                  : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-tertiary'
-              )}
-            >
-              <List className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={cn(
-                'flex h-10 w-10 items-center justify-center transition-colors',
-                viewMode === 'grid'
-                  ? 'bg-accent-copper/10 text-accent-copper'
-                  : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-tertiary'
-              )}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Filter chips */}
-        <div className="flex flex-wrap gap-2">
-          {filterDefs.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => setActiveFilter(filter.id)}
-              className={cn(
-                'rounded-full px-3.5 py-1.5 text-caption font-medium transition-all duration-200 flex items-center gap-1.5',
-                activeFilter === filter.id
-                  ? 'bg-accent-copper/10 text-accent-copper border border-accent-copper/20'
-                  : 'text-text-secondary border border-border-medium hover:border-border-strong hover:text-text-primary'
-              )}
-            >
-              {filter.label}
-              <span className={cn(
-                'text-[10px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full',
-                activeFilter === filter.id
-                  ? 'bg-accent-copper/20 text-accent-copper'
-                  : 'bg-bg-tertiary text-text-tertiary'
-              )}>
-                {filterCounts[filter.id] ?? '—'}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Results count ── */}
-      <div className="flex items-center justify-between">
-        <span className="text-caption text-text-tertiary">
-          {loading ? '…' : `${totalCount} risultat${totalCount === 1 ? 'o' : 'i'}`}
-        </span>
-      </div>
-
-      {/* ── Loading skeleton ── */}
-      {loading ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex flex-col rounded-lg border border-border-subtle bg-bg-secondary overflow-hidden animate-pulse"
+          {/* Filter Chips */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+            {filterDefs.map((filter) => (
+              <button
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id)}
+                className={`px-4 h-8 rounded-full text-[12px] font-medium whitespace-nowrap transition-all flex-shrink-0 flex items-center gap-1.5 ${
+                  activeFilter === filter.id
+                    ? 'bg-[#C9843A] text-[#07070D]'
+                    : 'bg-[#0D0D15] text-[#A09E96] border border-[rgba(255,255,255,0.06)] hover:border-[#C9843A]/50'
+                }`}
               >
-                <div className="aspect-[4/3] bg-bg-tertiary" />
-                <div className="flex flex-col gap-2 p-4">
-                  <div className="h-3 w-24 bg-bg-tertiary rounded" />
-                  <div className="h-4 w-40 bg-bg-tertiary rounded" />
-                  <div className="h-3 w-28 bg-bg-tertiary rounded" />
-                  <div className="flex items-center justify-between mt-1 pt-2 border-t border-border-subtle">
-                    <div className="h-4 w-16 bg-bg-tertiary rounded" />
-                    <div className="h-3 w-10 bg-bg-tertiary rounded" />
+                {filter.label}
+                {filterCounts[filter.id] !== undefined && (
+                  <span className={`text-[10px] min-w-[18px] h-[18px] flex items-center justify-center rounded-full ${
+                    activeFilter === filter.id
+                      ? 'bg-[#07070D]/20 text-[#07070D]'
+                      : 'bg-[rgba(255,255,255,0.06)] text-[#6B6963]'
+                  }`}>
+                    {filterCounts[filter.id]}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sort Row */}
+        <div className="max-w-md mx-auto px-6 pb-3 flex items-center justify-between">
+          <span className="text-[12px] text-[#6B6963]">
+            {loading ? '...' : `${totalCount} bottles`}
+          </span>
+          <button
+            onClick={() => setShowSort(!showSort)}
+            className="flex items-center gap-1 text-[12px] text-[#C9843A] font-medium"
+          >
+            <SlidersHorizontal className="w-4 h-4" strokeWidth={1.5} />
+            Sort
+          </button>
+        </div>
+      </div>
+
+      {/* ── Bottle Cards ── */}
+      <div className="max-w-md mx-auto px-6 py-4 space-y-3">
+        {loading ? (
+          /* Loading Skeletons */
+          Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-[#0D0D15] rounded-xl p-4 border border-[rgba(255,255,255,0.06)] animate-pulse"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-lg bg-[#14141F] flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="flex-1">
+                      <div className="h-4 w-32 bg-[#14141F] rounded mb-2" />
+                      <div className="h-3.5 w-44 bg-[#14141F] rounded" />
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="h-5 w-16 bg-[#14141F] rounded mb-1" />
+                      <div className="h-3 w-12 bg-[#14141F] rounded" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="h-5 w-14 bg-[#14141F] rounded-full" />
+                    <div className="h-5 w-14 bg-[#14141F] rounded-full" />
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
+          ))
+        ) : bottles.length === 0 ? (
+          /* Empty State */
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#14141F] mb-4">
+              <Wine className="h-7 w-7 text-[#6B6963]" />
+            </div>
+            <p className="text-[16px] text-[#A09E96]">No bottles found</p>
+            <p className="text-[14px] text-[#6B6963] mt-1">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border-subtle overflow-hidden">
-            <div className="grid grid-cols-[1fr_120px_100px_100px_100px] gap-4 px-4 py-3 bg-bg-tertiary border-b border-border-subtle">
-              <span className="text-overline text-text-tertiary">BOTTIGLIA</span>
-              <span className="text-overline text-text-tertiary text-right">PREZZO</span>
-              <span className="text-overline text-text-tertiary text-right">MARGINE</span>
-              <span className="text-overline text-text-tertiary text-center">CATEGORIA</span>
-              <span className="text-overline text-text-tertiary text-center">STATO</span>
-            </div>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-[1fr_120px_100px_100px_100px] gap-4 items-center px-4 py-3.5 border-b border-border-subtle bg-bg-secondary animate-pulse"
+          /* Bottle List */
+          bottles.map((bottle) => {
+            const margin = computeMargin(bottle);
+            const status = statusConfig[bottle.status] || statusConfig.pending_valuation;
+            return (
+              <Link
+                key={bottle.id}
+                href={`/dashboard/bottles/${bottle.id}`}
+                className="block bg-[#0D0D15] rounded-xl p-4 border border-[rgba(255,255,255,0.06)] hover:border-[#C9843A]/30 transition-all active:scale-[0.98]"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-8 rounded-md bg-bg-tertiary" />
-                  <div className="flex flex-col gap-1">
-                    <div className="h-4 w-36 bg-bg-tertiary rounded" />
-                    <div className="h-3 w-24 bg-bg-tertiary rounded" />
+                <div className="flex items-center gap-4">
+                  {/* Image */}
+                  <div className="w-14 h-14 rounded-lg bg-[#14141F] border border-[rgba(255,255,255,0.06)] flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {bottle.primary_photo ? (
+                      <Image
+                        src={bottle.primary_photo}
+                        alt={`${bottle.producer} ${bottle.name}`}
+                        width={56}
+                        height={56}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-8 w-2 rounded-sm bg-[#C9843A]/20" />
+                    )}
                   </div>
-                </div>
-                <div className="h-4 w-16 bg-bg-tertiary rounded ml-auto" />
-                <div className="h-4 w-10 bg-bg-tertiary rounded ml-auto" />
-                <div className="h-4 w-14 bg-bg-tertiary rounded mx-auto" />
-                <div className="h-5 w-16 bg-bg-tertiary rounded-full mx-auto" />
-              </div>
-            ))}
-          </div>
-        )
-      ) : (
-        <>
-          {/* ── Bottle Grid / List ── */}
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {bottles.map((bottle) => {
-                const CatIcon = categoryIcon[bottle.category] || Wine;
-                const status = statusConfig[bottle.status] || statusConfig.pending_valuation;
-                const margin = computeMargin(bottle);
-                const catLabel = categoryLabel[bottle.category] || bottle.category;
-                return (
-                  <Link
-                    key={bottle.id}
-                    href={`/dashboard/bottles/${bottle.id}`}
-                    className="group flex flex-col rounded-lg border border-border-subtle bg-bg-secondary overflow-hidden transition-all duration-200 hover:border-border-medium hover:bg-bg-tertiary hover-lift"
-                  >
-                    {/* Card image area */}
-                    <div className="relative aspect-[4/3] bg-bg-tertiary flex items-center justify-center overflow-hidden">
-                      {bottle.primary_photo ? (
-                        <Image
-                          src={bottle.primary_photo}
-                          alt={`${bottle.producer} ${bottle.name}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 text-text-disabled">
-                          <div className="h-20 w-6 rounded-sm bg-accent-wine/20 group-hover:bg-accent-wine/30 transition-colors" />
-                        </div>
-                      )}
-                      {/* Status pill */}
-                      <div className={cn('absolute top-3 right-3 flex items-center gap-1.5 rounded-full px-2.5 py-1', status.bg)}>
-                        <div className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
-                        <span className={cn('text-[10px] font-semibold uppercase tracking-wide', status.text)}>
-                          {status.label}
-                        </span>
-                      </div>
-                      {/* Category icon */}
-                      <div className="absolute bottom-3 left-3 flex h-7 w-7 items-center justify-center rounded-md bg-bg-primary/60 backdrop-blur-sm">
-                        <CatIcon className="h-3.5 w-3.5 text-text-tertiary" />
-                      </div>
-                    </div>
 
-                    {/* Card body */}
-                    <div className="flex flex-col gap-2 p-4">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-overline text-text-tertiary">{bottle.producer}</span>
-                        <h4 className="text-body-sm font-medium text-text-primary truncate">
-                          {bottle.name}
-                          {bottle.vintage && <span className="text-text-secondary ml-1">{bottle.vintage}</span>}
-                        </h4>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-[14px] font-semibold text-[#EEECE7] truncate">
+                          {bottle.producer}
+                        </h3>
+                        <p className="text-[14px] text-[#A09E96] truncate">
+                          {bottle.name} {bottle.vintage && `${bottle.vintage}`}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2 text-caption text-text-secondary">
-                        <span>{catLabel}</span>
-                        <span className="text-text-disabled">&middot;</span>
-                        <span>{bottle.region}</span>
-                      </div>
-                      <div className="flex items-center justify-between mt-1 pt-2 border-t border-border-subtle">
-                        <span className="text-body-sm font-semibold text-accent-copper">
+                      <div className="flex flex-col items-end flex-shrink-0">
+                        <p className="text-[16px] font-semibold text-[#C9843A] font-mono">
                           {formatCurrency(displayPrice(bottle))}
-                        </span>
+                        </p>
                         {margin !== null ? (
-                          <span className={cn(
-                            'text-caption font-medium flex items-center gap-0.5',
-                            margin >= 15 ? 'text-success' : margin >= 10 ? 'text-warning' : 'text-danger'
-                          )}>
-                            {margin >= 15 ? (
-                              <TrendingUp className="h-3 w-3" />
-                            ) : (
-                              <TrendingDown className="h-3 w-3" />
-                            )}
-                            {margin}%
-                          </span>
+                          <p className={`text-[11px] font-medium ${
+                            margin > 20 ? 'text-[#22C68A]' : margin < 10 ? 'text-[#E5A832]' : 'text-[#A09E96]'
+                          }`}>
+                            {margin}% margin
+                          </p>
                         ) : (
-                          <span className="text-caption text-text-disabled">N/A</span>
+                          <p className="text-[11px] text-[#6B6963]">N/A</p>
                         )}
                       </div>
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            /* ── List View ── */
-            <div className="rounded-lg border border-border-subtle overflow-hidden">
-              {/* Table header */}
-              <div className="grid grid-cols-[1fr_120px_100px_100px_100px] gap-4 px-4 py-3 bg-bg-tertiary border-b border-border-subtle">
-                <span className="text-overline text-text-tertiary">BOTTIGLIA</span>
-                <span className="text-overline text-text-tertiary text-right">PREZZO</span>
-                <span className="text-overline text-text-tertiary text-right">MARGINE</span>
-                <span className="text-overline text-text-tertiary text-center">CATEGORIA</span>
-                <span className="text-overline text-text-tertiary text-center">STATO</span>
-              </div>
-              {/* Table rows */}
-              {bottles.map((bottle) => {
-                const CatIcon = categoryIcon[bottle.category] || Wine;
-                const status = statusConfig[bottle.status] || statusConfig.pending_valuation;
-                const margin = computeMargin(bottle);
-                const catLabel = categoryLabel[bottle.category] || bottle.category;
-                return (
-                  <Link
-                    key={bottle.id}
-                    href={`/dashboard/bottles/${bottle.id}`}
-                    className="grid grid-cols-[1fr_120px_100px_100px_100px] gap-4 items-center px-4 py-3.5 border-b border-border-subtle bg-bg-secondary hover:bg-bg-tertiary transition-colors group"
-                  >
-                    {/* Name + producer */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      {bottle.primary_photo ? (
-                        <div className="relative flex h-10 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden bg-bg-tertiary">
-                          <Image
-                            src={bottle.primary_photo}
-                            alt={`${bottle.producer} ${bottle.name}`}
-                            fill
-                            className="object-cover"
-                            sizes="32px"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex h-10 w-8 shrink-0 items-center justify-center rounded-md bg-bg-tertiary group-hover:bg-bg-quaternary transition-colors">
-                          <div className="h-7 w-2 rounded-sm bg-accent-wine/25" />
-                        </div>
-                      )}
-                      <div className="flex flex-col gap-0 min-w-0">
-                        <span className="text-body-sm font-medium text-text-primary truncate">
-                          {bottle.name}{bottle.vintage ? ` ${bottle.vintage}` : ''}
-                        </span>
-                        <span className="text-caption text-text-tertiary truncate">
-                          {bottle.producer} &middot; {bottle.region}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Price */}
-                    <span className="text-body-sm font-semibold text-accent-copper text-right">
-                      {formatCurrency(displayPrice(bottle))}
-                    </span>
-
-                    {/* Margin */}
-                    {margin !== null ? (
-                      <span className={cn(
-                        'text-body-sm font-medium text-right flex items-center justify-end gap-1',
-                        margin >= 15 ? 'text-success' : margin >= 10 ? 'text-warning' : 'text-danger'
-                      )}>
-                        {margin >= 15 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                        {margin}%
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+                        style={{ backgroundColor: `${status.color}15`, color: status.color }}
+                      >
+                        {status.label}
                       </span>
-                    ) : (
-                      <span className="text-body-sm text-text-disabled text-right">N/A</span>
-                    )}
-
-                    {/* Category */}
-                    <div className="flex items-center justify-center">
-                      <div className="flex items-center gap-1.5 text-caption text-text-secondary">
-                        <CatIcon className="h-3.5 w-3.5" />
-                        {catLabel}
-                      </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="flex justify-center">
-                      <span className={cn('flex items-center gap-1.5 rounded-full px-2.5 py-1', status.bg)}>
-                        <span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
-                        <span className={cn('text-[10px] font-semibold uppercase tracking-wide', status.text)}>
-                          {status.label}
-                        </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#14141F] text-[#A09E96]">
+                        {getCategoryIcon(bottle.category)}
+                        {bottle.category}
                       </span>
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </div>
 
-          {/* ── Empty state ── */}
-          {bottles.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-bg-tertiary mb-4">
-                <Wine className="h-7 w-7 text-text-disabled" />
+      {/* ── Sort Bottom Sheet ── */}
+      {showSort && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40"
+            onClick={() => setShowSort(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 glass-bg rounded-t-[20px] border-t border-[rgba(255,255,255,0.06)] animate-in slide-in-from-bottom duration-300">
+            <div className="max-w-md mx-auto">
+              {/* Drag Handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 bg-[rgba(255,255,255,0.2)] rounded-full" />
               </div>
-              <p className="text-body-lg text-text-secondary">Nessuna bottiglia trovata</p>
-              <p className="text-body-sm text-text-tertiary mt-1">Prova a modificare i filtri di ricerca</p>
+
+              <div className="px-6 pb-8">
+                <h3 className="text-[18px] font-semibold text-[#EEECE7] mb-4">Sort by</h3>
+                <div className="space-y-2">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      className={`w-full h-12 border rounded-xl px-4 text-left text-[14px] transition-all ${
+                        sortBy === option.id
+                          ? 'bg-[#C9843A]/10 border-[#C9843A]/30 text-[#C9843A]'
+                          : 'bg-[#0D0D15] hover:bg-[#14141F] border-[rgba(255,255,255,0.06)] text-[#EEECE7]'
+                      }`}
+                      onClick={() => {
+                        setSortBy(option.id);
+                        setShowSort(false);
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          )}
+          </div>
         </>
       )}
     </div>
